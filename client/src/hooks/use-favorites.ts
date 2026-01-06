@@ -1,0 +1,53 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, buildUrl, type InsertFavorite } from "@shared/routes";
+
+// GET /api/favorites
+export function useFavorites() {
+  return useQuery({
+    queryKey: [api.favorites.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.favorites.list.path, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch favorites");
+      return api.favorites.list.responses[200].parse(await res.json());
+    },
+  });
+}
+
+// POST /api/favorites
+export function useAddFavorite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: InsertFavorite) => {
+      const validated = api.favorites.create.input.parse(data);
+      const res = await fetch(api.favorites.create.path, {
+        method: api.favorites.create.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to add favorite");
+      return api.favorites.create.responses[201].parse(await res.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.favorites.list.path] });
+    },
+  });
+}
+
+// DELETE /api/favorites/:index
+export function useRemoveFavorite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (spellIndex: string) => {
+      const url = buildUrl(api.favorites.delete.path, { index: spellIndex });
+      const res = await fetch(url, { 
+        method: api.favorites.delete.method,
+        credentials: "include" 
+      });
+      if (!res.ok) throw new Error("Failed to remove favorite");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.favorites.list.path] });
+    },
+  });
+}

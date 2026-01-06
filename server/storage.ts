@@ -1,38 +1,32 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import { favorites, type InsertFavorite, type Favorite } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getFavorites(): Promise<Favorite[]>;
+  createFavorite(favorite: InsertFavorite): Promise<Favorite>;
+  deleteFavorite(spellIndex: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getFavorites(): Promise<Favorite[]> {
+    return await db.select().from(favorites);
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async createFavorite(favorite: InsertFavorite): Promise<Favorite> {
+    const [created] = await db.insert(favorites).values(favorite).onConflictDoNothing().returning();
+    // Return existing if duplicate (onConflictDoNothing returns undefined if conflict)
+    // For simplicity in this demo, if it exists, we just return the first match
+    if (!created) {
+       const [existing] = await db.select().from(favorites).where(eq(favorites.spellIndex, favorite.spellIndex));
+       return existing;
+    }
+    return created;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async deleteFavorite(spellIndex: string): Promise<void> {
+    await db.delete(favorites).where(eq(favorites.spellIndex, spellIndex));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
