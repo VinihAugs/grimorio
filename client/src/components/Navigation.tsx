@@ -23,9 +23,9 @@ export function Navigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
       <div className="flex justify-between items-center max-w-md mx-auto w-full">
-        <NavItem href="/" icon={Book} label="Grimoire" />
-        <NavItem href="/favorites" icon={Star} label="Favorites" />
-        <NavItem href="/profile" icon={User} label="Profile" />
+        <NavItem href="/" icon={Book} label="Grimório" />
+        <NavItem href="/favorites" icon={Star} label="Favoritos" />
+        <NavItem href="/profile" icon={User} label="Perfil" />
       </div>
     </nav>
   );

@@ -69,7 +69,7 @@ export function SpellDrawer({ spellIndex, isOpen, onClose }: SpellDrawerProps) {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-64 space-y-4">
                 <Sparkles className="animate-spin text-primary" size={32} />
-                <p className="text-muted-foreground font-display tracking-widest animate-pulse">Summoning knowledge...</p>
+                <p className="text-muted-foreground font-display tracking-widest animate-pulse">Invocando conhecimento...</p>
               </div>
             ) : spell ? (
               <div className="max-w-md mx-auto pb-safe">
@@ -92,10 +92,10 @@ export function SpellDrawer({ spellIndex, isOpen, onClose }: SpellDrawerProps) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-8">
-                  <StatBox icon={Clock} label="Casting Time" value={spell.casting_time} />
-                  <StatBox icon={Ruler} label="Range" value={spell.range} />
-                  <StatBox icon={Clock} label="Duration" value={spell.duration} />
-                  <StatBox icon={Shield} label="Components" value={spell.components.join(", ")} />
+                  <StatBox icon={Clock} label="Tempo de Conjuração" value={spell.casting_time} />
+                  <StatBox icon={Ruler} label="Alcance" value={spell.range} />
+                  <StatBox icon={Clock} label="Duração" value={spell.duration} />
+                  <StatBox icon={Shield} label="Componentes" value={spell.components.join(", ")} />
                 </div>
 
                 <div className="space-y-4 text-gray-300 font-body text-lg leading-relaxed">
@@ -105,7 +105,7 @@ export function SpellDrawer({ spellIndex, isOpen, onClose }: SpellDrawerProps) {
                   
                   {spell.higher_level && spell.higher_level.length > 0 && (
                     <div className="mt-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20">
-                      <h4 className="text-secondary-foreground font-display mb-2 text-sm uppercase tracking-widest">At Higher Levels</h4>
+                      <h4 className="text-secondary-foreground font-display mb-2 text-sm uppercase tracking-widest">Em Níveis Superiores</h4>
                       {spell.higher_level.map((p, i) => (
                         <p key={i} className="text-secondary-foreground/80 text-base">{p}</p>
                       ))}
@@ -115,7 +115,7 @@ export function SpellDrawer({ spellIndex, isOpen, onClose }: SpellDrawerProps) {
               </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
-                <p>The pages are blank...</p>
+                <p>As páginas estão em branco...</p>
               </div>
             )}
           </div>

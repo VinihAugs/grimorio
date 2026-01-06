@@ -12,8 +12,10 @@ export default function Favorites() {
 
   const filteredFavorites = useMemo(() => {
     if (!favorites) return [];
+    const term = searchTerm.toLowerCase();
     return favorites.filter(fav => 
-      fav.spellName.toLowerCase().includes(searchTerm.toLowerCase())
+      fav.spellName.toLowerCase().includes(term) ||
+      fav.spellIndex.toLowerCase().includes(term)
     );
   }, [favorites, searchTerm]);
 
@@ -30,7 +32,7 @@ export default function Favorites() {
       <StickyHeader 
         searchTerm={searchTerm} 
         setSearchTerm={setSearchTerm} 
-        title="Prepared Spells" 
+        title="Feitiços Preparados" 
       />
 
       <main className="px-6 pt-6 max-w-md mx-auto">
@@ -42,7 +44,7 @@ export default function Favorites() {
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
             <Star size={48} className="text-muted-foreground" />
             <p className="text-muted-foreground font-body max-w-xs">
-              You haven't prepared any spells yet. Star them in the Grimoire to add them here.
+              Você ainda não preparou nenhum feitiço. Marque-os com uma estrela no Grimório para adicioná-los aqui.
             </p>
           </div>
         ) : (

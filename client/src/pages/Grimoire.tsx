@@ -14,8 +14,10 @@ export default function Grimoire() {
 
   const filteredSpells = useMemo(() => {
     if (!spells) return [];
+    const term = searchTerm.toLowerCase();
     return spells.filter(spell => 
-      spell.name.toLowerCase().includes(searchTerm.toLowerCase())
+      spell.name.toLowerCase().includes(term) ||
+      spell.index.toLowerCase().includes(term)
     );
   }, [spells, searchTerm]);
 
@@ -41,8 +43,8 @@ export default function Grimoire() {
     return (
       <div className="flex items-center justify-center h-screen px-6 text-center">
         <div className="space-y-4">
-          <h2 className="text-destructive font-display text-xl">Connection Severed</h2>
-          <p className="text-muted-foreground">The arcane energies are disrupted.</p>
+          <h2 className="text-destructive font-display text-xl">Conexão Cortada</h2>
+          <p className="text-muted-foreground">As energias arcanas estão perturbadas.</p>
         </div>
       </div>
     );
@@ -56,11 +58,11 @@ export default function Grimoire() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <Sparkles className="animate-spin text-primary" size={32} />
-            <p className="text-muted-foreground font-display tracking-widest animate-pulse">Consulting the tomes...</p>
+            <p className="text-muted-foreground font-display tracking-widest animate-pulse">Consultando os tomos...</p>
           </div>
         ) : filteredSpells.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-muted-foreground font-body italic">No spells found matching that description.</p>
+            <p className="text-muted-foreground font-body italic">Nenhum feitiço encontrado com essa descrição.</p>
           </div>
         ) : (
           filteredSpells.map((spell, index) => (

@@ -18,7 +18,7 @@ export default function Profile() {
             </div>
           </div>
           <h1 className="text-2xl font-display text-white tracking-widest text-shadow-glow">Seth Malagor</h1>
-          <p className="text-primary text-sm font-sans uppercase tracking-widest mt-1">Lich Lord • Lvl 20</p>
+          <p className="text-primary text-sm font-sans uppercase tracking-widest mt-1">Lorde Lich • Nível 20</p>
         </div>
       </header>
 
@@ -26,33 +26,33 @@ export default function Profile() {
         
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <StatCard icon={Scroll} label="Spells Known" value="142" />
-          <StatCard icon={Skull} label="Minions Raised" value="8,492" />
-          <StatCard icon={Award} label="Souls Harvested" value="666" />
-          <StatCard icon={Zap} label="Mana Capacity" value="∞" />
+          <StatCard icon={Scroll} label="Feitiços Conhecidos" value="142" />
+          <StatCard icon={Skull} label="Lacaios Erguidos" value="8.492" />
+          <StatCard icon={Award} label="Almas Colhidas" value="666" />
+          <StatCard icon={Zap} label="Capacidade de Mana" value="∞" />
         </div>
 
         {/* Character Details */}
         <div className="bg-white/5 border border-white/5 rounded-2xl p-6 backdrop-blur-sm">
-          <h3 className="font-display text-lg text-white mb-4 border-b border-white/10 pb-2">Dark Gifts</h3>
+          <h3 className="font-display text-lg text-white mb-4 border-b border-white/10 pb-2">Dons Sombrios</h3>
           <div className="space-y-4">
             <Ability 
-              name="Grim Harvest" 
-              desc="When you kill a creature with a spell, you regain hit points equal to twice the spell's level."
+              name="Colheita Sombria" 
+              desc="Quando você mata uma criatura com um feitiço, você recupera pontos de vida iguais ao dobro do nível do feitiço."
             />
             <Ability 
-              name="Undead Thralls" 
-              desc="Create additional undead when casting Animate Dead. They gain extra HP and damage."
+              name="Escravos Mortos-Vivos" 
+              desc="Crie mortos-vivos adicionais ao conjurar Animais Mortos. Eles ganham PV e dano extra."
             />
             <Ability 
-              name="Command Undead" 
-              desc="As an action, you can choose one undead that you can see within 60 ft."
+              name="Comandar Mortos-Vivos" 
+              desc="Como uma ação, você pode escolher um morto-vivo que possa ver a até 60 pés."
             />
           </div>
         </div>
 
         <button className="w-full py-4 rounded-xl border border-destructive/30 text-destructive font-display tracking-widest hover:bg-destructive/10 transition-colors uppercase text-sm">
-          Log Out
+          Sair
         </button>
 
       </main>
