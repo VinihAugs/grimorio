@@ -24,8 +24,10 @@ export default function Grimoire() {
   // Initial Entry Animation
   useEffect(() => {
     if (!isLoading && filteredSpells.length > 0 && listRef.current) {
+      // Usar querySelectorAll para garantir que estamos animando o que está em tela
+      const cards = listRef.current.querySelectorAll(".spell-card-anim");
       gsap.fromTo(
-        ".spell-card-anim",
+        cards,
         { y: 50, opacity: 0 },
         { 
           y: 0, 
@@ -33,11 +35,11 @@ export default function Grimoire() {
           stagger: 0.05, 
           ease: "power3.out", 
           duration: 0.8,
-          clearProps: "all" // Important for interactions later
+          clearProps: "all"
         }
       );
     }
-  }, [isLoading, filteredSpells.length]); // Re-run if filter changes significantly if desired, but mostly on mount
+  }, [isLoading, filteredSpells.length]); 
 
   if (error) {
     return (
@@ -66,8 +68,7 @@ export default function Grimoire() {
           </div>
         ) : (
           filteredSpells.map((spell, index) => (
-            <div key={spell.index} className="spell-card-anim opacity-0"> 
-              {/* Wrapper for GSAP to target without messing up component refs */}
+            <div key={spell.index} className="spell-card-anim"> 
               <SpellCard 
                 spell={spell} 
                 index={index}
