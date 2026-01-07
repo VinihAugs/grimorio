@@ -46,11 +46,21 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Email, senha e nome são obrigatórios" });
       }
 
-      // Garante que MongoDB está conectado
-      const db = await ensureMongoDBConnection();
+      // Garante que MongoDB está conectado (com timeout)
+      let db;
+      try {
+        db = await Promise.race([
+          ensureMongoDBConnection(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)) // Timeout de 5 segundos
+        ]);
+      } catch (error) {
+        console.error("Erro ao conectar MongoDB:", error);
+        db = null;
+      }
+      
       if (!db) {
-        return res.status(500).json({ 
-          message: "Banco de dados não disponível. Verifique se MONGODB_URI está configurado corretamente." 
+        return res.status(503).json({ 
+          message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes." 
         });
       }
 
