@@ -12,12 +12,23 @@ function getClient(): MongoClient | null {
     return null;
   }
   if (!client) {
+    // Garante que a connection string tem os parâmetros necessários
+    let mongoUri = process.env.MONGODB_URI;
+    
+    // Se não tiver parâmetros de query, adiciona
+    if (!mongoUri.includes('?')) {
+      mongoUri += '?retryWrites=true&w=majority';
+    } else if (!mongoUri.includes('retryWrites')) {
+      mongoUri += '&retryWrites=true';
+    }
+    if (!mongoUri.includes('w=majority') && !mongoUri.includes('w=')) {
+      mongoUri += mongoUri.includes('?') ? '&w=majority' : '?w=majority';
+    }
+    
     // Configura opções de conexão para MongoDB Atlas otimizadas
     const options = {
-      // Força uso de SSL/TLS (necessário para MongoDB Atlas)
-      tls: true,
       // Timeout de conexão reduzido para resposta mais rápida
-      connectTimeoutMS: 10000, // 10 segundos ao invés de 30
+      connectTimeoutMS: 10000, // 10 segundos
       // Timeout de socket
       socketTimeoutMS: 45000, // 45 segundos
       // Retry de conexão
@@ -34,7 +45,16 @@ function getClient(): MongoClient | null {
       heartbeatFrequencyMS: 10000,
     };
     
-    client = new MongoClient(process.env.MONGODB_URI, options);
+    // Para MongoDB Atlas (mongodb+srv://), não precisa especificar tls explicitamente
+    // O driver já usa TLS automaticamente para mongodb+srv://
+    if (!mongoUri.startsWith('mongodb+srv://')) {
+      // Para connection strings normais, força TLS
+      (options as any).tls = true;
+    }
+    
+    console.log("🔗 Usando MongoDB URI:", mongoUri.replace(/:[^:@]+@/, ':****@')); // Esconde senha nos logs
+    
+    client = new MongoClient(mongoUri, options);
   }
   return client;
 }
@@ -56,15 +76,33 @@ export async function connectMongoDB(): Promise<Db | null> {
 
   try {
     console.log("🔌 Conectando ao MongoDB...");
-    await mongoClient.connect();
+    
+    // Tenta conectar com timeout
+    await Promise.race([
+      mongoClient.connect(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Connection timeout")), 10000)
+      )
+    ]);
+    
     console.log("✅ Conexão estabelecida com MongoDB");
     
     db = mongoClient.db("necro_tome");
     console.log("📦 Usando banco de dados: necro_tome");
     
-    // Testa a conexão
-    await db.admin().ping();
-    console.log("✅ Ping bem-sucedido - MongoDB está respondendo");
+    // Testa a conexão com timeout
+    try {
+      await Promise.race([
+        db.admin().ping(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Ping timeout")), 5000)
+        )
+      ]);
+      console.log("✅ Ping bem-sucedido - MongoDB está respondendo");
+    } catch (pingError) {
+      console.warn("⚠️  Ping falhou, mas continuando...", pingError);
+      // Não bloqueia se o ping falhar
+    }
     
     // Inicializa o banco (cria coleções e índices se necessário)
     try {
@@ -84,7 +122,13 @@ export async function connectMongoDB(): Promise<Db | null> {
     if (error.message?.includes("ENOTFOUND") || error.message?.includes("getaddrinfo")) {
       console.error("💡 Verifique se a URL do MongoDB está correta e acessível");
     }
-    throw error;
+    if (error.message?.includes("SSL") || error.message?.includes("TLS")) {
+      console.error("💡 Erro SSL/TLS. Verifique a connection string do MongoDB Atlas");
+      console.error("💡 Certifique-se de que a connection string inclui: ?retryWrites=true&w=majority");
+    }
+    // Não lança erro - permite que o servidor continue com armazenamento em memória
+    console.warn("⚠️  Continuando sem MongoDB - usando armazenamento em memória");
+    return null;
   }
 }
 
