@@ -178,8 +178,11 @@ export async function registerRoutes(
           secure: req.session.cookie.secure,
           httpOnly: req.session.cookie.httpOnly,
           sameSite: req.session.cookie.sameSite,
-          maxAge: req.session.cookie.maxAge
+          maxAge: req.session.cookie.maxAge,
+          domain: req.session.cookie.domain,
+          path: req.session.cookie.path
         });
+        console.log("🍪 Set-Cookie header será enviado:", res.getHeader("Set-Cookie"));
         const userId = user._id?.toString ? user._id.toString() : String(user._id);
         res.json({
           id: userId,

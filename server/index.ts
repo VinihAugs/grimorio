@@ -21,18 +21,19 @@ const app = express();
 const httpServer = createServer(app);
 
 // CORS configuration - permite cookies cross-origin
+// IMPORTANTE: Para o mesmo domínio, não precisa de CORS, mas vamos manter para garantir
 app.use((req, res, next) => {
   const origin = req.headers.origin;
+  const host = req.headers.host;
   
-  // Em produção, permite apenas o próprio domínio (mesmo origin)
-  // Em desenvolvimento, permite qualquer origem
-  if (process.env.NODE_ENV === "production") {
-    // Em produção, permite requisições do mesmo domínio
-    // O navegador já envia cookies automaticamente para o mesmo domínio
-    res.setHeader("Access-Control-Allow-Origin", origin || req.headers.host || "*");
-  } else {
-    // Em desenvolvimento, permite qualquer origem
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+  // Se a requisição é do mesmo domínio, não precisa de CORS
+  // Mas vamos configurar mesmo assim para garantir
+  if (origin && host && origin.includes(host.split(':')[0])) {
+    // Mesmo domínio - permite
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else if (origin) {
+    // Cross-origin - permite com credenciais
+    res.setHeader("Access-Control-Allow-Origin", origin);
   }
   
   res.setHeader("Access-Control-Allow-Credentials", "true");
