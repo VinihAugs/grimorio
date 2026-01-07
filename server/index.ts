@@ -1,7 +1,21 @@
+// Carrega variáveis de ambiente do arquivo .env
+import "dotenv/config";
+
+// Debug: verifica se as variáveis foram carregadas
+if (process.env.MONGODB_URI) {
+  console.log("✅ MONGODB_URI carregado do .env");
+} else {
+  console.warn("⚠️  MONGODB_URI não encontrado nas variáveis de ambiente");
+}
+
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import passport from "passport";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { connectMongoDB } from "./mongodb";
+import "./auth";
 
 const app = express();
 const httpServer = createServer(app);
@@ -21,6 +35,24 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
+  })
+);
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -60,14 +92,45 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Connect to MongoDB (não bloqueia se não estiver configurado)
+  try {
+    const db = await connectMongoDB();
+    if (db) {
+      // Inicializa o banco (cria coleções e índices)
+      try {
+        const { initializeDatabase } = await import("./init-db");
+        await initializeDatabase();
+      } catch (initError) {
+        console.warn("⚠️  Erro ao inicializar banco:", initError);
+      }
+    }
+  } catch (error) {
+    console.error("⚠️  Erro ao conectar MongoDB:", error);
+    console.log("⚠️  Continuando com armazenamento em memória...");
+  }
+  
   await registerRoutes(httpServer, app);
+
+  // Debug: Lista todas as rotas registradas
+  console.log("📋 Rotas registradas:");
+  app._router?.stack?.forEach((middleware: any) => {
+    if (middleware.route) {
+      console.log(`  ${Object.keys(middleware.route.methods).join(', ').toUpperCase()} ${middleware.route.path}`);
+    }
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    console.error("❌ Erro não tratado:", err);
+    console.error("Stack:", err.stack);
+
+    res.status(status).json({ 
+      message,
+      error: process.env.NODE_ENV === "development" ? err.stack : undefined
+    });
+    // Não lança o erro novamente para não quebrar o servidor
   });
 
   // importantly only setup vite in development and after
@@ -86,11 +149,8 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
-    {
       port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
+    "0.0.0.0",
     () => {
       log(`serving on port ${port}`);
     },

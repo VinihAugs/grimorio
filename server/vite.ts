@@ -29,10 +29,29 @@ export async function setupVite(server: Server, app: Express) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  // IMPORTANT: Do NOT apply vite.middlewares directly
+  // Instead, create a wrapper that filters API routes
+  // This ensures Express routes are checked first
+  app.use((req, res, next) => {
+    const url = req.originalUrl || req.url || "";
+    
+    // Skip Vite middleware for API routes - let Express handle them
+    if (url.startsWith("/api")) {
+      return next();
+    }
+    
+    // Apply Vite middleware for all other routes
+    vite.middlewares(req, res, next);
+  });
 
+  // Only handle non-API routes - serve HTML
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+
+    // Skip API routes - let Express handle them
+    if (url.startsWith("/api")) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(

@@ -1,32 +1,17 @@
-import { db } from "./db";
-import { favorites, type InsertFavorite, type Favorite } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import type { InsertFavorite, Favorite } from "@shared/schema";
+import { MongoDBStorage } from "./storage-mongodb";
+import { MemoryStorage } from "./storage-memory";
+
+// Tipo estendido para incluir characterId opcional
+type InsertFavoriteWithCharacter = InsertFavorite & { characterId?: string };
 
 export interface IStorage {
-  getFavorites(): Promise<Favorite[]>;
-  createFavorite(favorite: InsertFavorite): Promise<Favorite>;
-  deleteFavorite(spellIndex: string): Promise<void>;
-}
-
-export class DatabaseStorage implements IStorage {
-  async getFavorites(): Promise<Favorite[]> {
-    return await db.select().from(favorites);
+  getFavorites(userId: string): Promise<Favorite[]>;
+  createFavorite(favorite: InsertFavoriteWithCharacter, userId: string): Promise<Favorite>;
+  deleteFavorite(spellIndex: string, userId: string): Promise<void>;
   }
 
-  async createFavorite(favorite: InsertFavorite): Promise<Favorite> {
-    const [created] = await db.insert(favorites).values(favorite).onConflictDoNothing().returning();
-    // Return existing if duplicate (onConflictDoNothing returns undefined if conflict)
-    // For simplicity in this demo, if it exists, we just return the first match
-    if (!created) {
-       const [existing] = await db.select().from(favorites).where(eq(favorites.spellIndex, favorite.spellIndex));
-       return existing;
-    }
-    return created;
-  }
-
-  async deleteFavorite(spellIndex: string): Promise<void> {
-    await db.delete(favorites).where(eq(favorites.spellIndex, spellIndex));
-  }
-}
-
-export const storage = new DatabaseStorage();
+// Usa MongoDB se MONGODB_URI estiver definido, senão usa memória
+export const storage = process.env.MONGODB_URI
+  ? new MongoDBStorage()
+  : new MemoryStorage();

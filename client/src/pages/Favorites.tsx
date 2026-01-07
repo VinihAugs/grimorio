@@ -4,11 +4,13 @@ import { StickyHeader } from "@/components/StickyHeader";
 import { SpellCard } from "@/components/SpellCard";
 import { SpellDrawer } from "@/components/SpellDrawer";
 import { Sparkles, Star } from "lucide-react";
+import { useVantaCells } from "@/hooks/use-vanta-cells";
 
 export default function Favorites() {
   const { data: favorites, isLoading } = useFavorites();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSpellIndex, setSelectedSpellIndex] = useState<string | null>(null);
+  const vantaRef = useVantaCells();
 
   const filteredFavorites = useMemo(() => {
     if (!favorites) return [];
@@ -28,14 +30,16 @@ export default function Favorites() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-24 grimoire-texture">
-      <StickyHeader 
-        searchTerm={searchTerm} 
-        setSearchTerm={setSearchTerm} 
-        title="Feitiços Preparados" 
-      />
+    <div className="min-h-screen pb-24 relative">
+      <div ref={vantaRef} className="absolute inset-0 z-0" />
+      <div className="relative z-10">
+        <StickyHeader 
+          searchTerm={searchTerm} 
+          setSearchTerm={setSearchTerm} 
+          title="Feitiços Preparados" 
+        />
 
-      <main className="px-6 pt-6 max-w-md mx-auto">
+        <main className="px-6 pt-6 max-w-md mx-auto">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <Sparkles className="animate-spin text-primary" size={32} />
@@ -49,23 +53,29 @@ export default function Favorites() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredFavorites.map((fav, index) => (
-              <SpellCard 
-                key={fav.id}
-                spell={getSpellItem(fav)} 
-                index={index}
-                onClick={() => setSelectedSpellIndex(fav.spellIndex)} 
-              />
-            ))}
+            {filteredFavorites.map((fav, index) => {
+              // Todos os favoritos na tela de favoritos são "conhecidos"
+              const isFavorite = true;
+              return (
+                <SpellCard 
+                  key={fav.id}
+                  spell={getSpellItem(fav)} 
+                  index={index}
+                  isFavorite={isFavorite}
+                  onClick={() => setSelectedSpellIndex(fav.spellIndex)} 
+                />
+              );
+            })}
           </div>
         )}
-      </main>
+        </main>
 
-      <SpellDrawer 
-        spellIndex={selectedSpellIndex} 
-        isOpen={!!selectedSpellIndex} 
-        onClose={() => setSelectedSpellIndex(null)} 
-      />
+        <SpellDrawer 
+          spellIndex={selectedSpellIndex} 
+          isOpen={!!selectedSpellIndex} 
+          onClose={() => setSelectedSpellIndex(null)} 
+        />
+      </div>
     </div>
   );
 }
