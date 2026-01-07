@@ -173,6 +173,13 @@ export async function registerRoutes(
           });
         }
         console.log("✅ Sessão criada com sucesso!");
+        console.log("🍪 Session ID:", req.sessionID);
+        console.log("🍪 Cookie config:", {
+          secure: req.session.cookie.secure,
+          httpOnly: req.session.cookie.httpOnly,
+          sameSite: req.session.cookie.sameSite,
+          maxAge: req.session.cookie.maxAge
+        });
         const userId = user._id?.toString ? user._id.toString() : String(user._id);
         res.json({
           id: userId,
