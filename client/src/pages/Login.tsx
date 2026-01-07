@@ -60,7 +60,7 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-4xl font-display text-white tracking-widest">
-            NECRO-TOME
+            NECROMANTE
           </h1>
           <p className="text-muted-foreground font-body">
             {isLogin

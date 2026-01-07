@@ -124,19 +124,22 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/login", async (req, res, next) => {
-    // Garante que MongoDB está conectado antes de autenticar
+    // Garante que MongoDB está conectado antes de autenticar (com timeout)
     try {
-      const db = await ensureMongoDBConnection();
+      const db = await Promise.race([
+        ensureMongoDBConnection(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)) // Timeout de 5 segundos
+      ]);
+      
       if (!db) {
-        return res.status(500).json({ 
-          message: "Banco de dados não disponível. Verifique se MONGODB_URI está configurado corretamente." 
+        return res.status(503).json({ 
+          message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes." 
         });
       }
     } catch (error: any) {
       console.error("Erro ao conectar MongoDB no login:", error);
-      return res.status(500).json({ 
-        message: "Erro ao conectar com o banco de dados",
-        error: process.env.NODE_ENV === "development" ? error.message : undefined
+      return res.status(503).json({ 
+        message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
       });
     }
     // Continua com a autenticação
