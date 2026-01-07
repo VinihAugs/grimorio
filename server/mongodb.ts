@@ -8,7 +8,25 @@ function getClient(): MongoClient | null {
     return null;
   }
   if (!client) {
-    client = new MongoClient(process.env.MONGODB_URI);
+    // Configura opções de conexão para MongoDB Atlas
+    const options = {
+      // Força uso de SSL/TLS (necessário para MongoDB Atlas)
+      tls: true,
+      // Timeout de conexão
+      connectTimeoutMS: 30000,
+      // Timeout de socket
+      socketTimeoutMS: 30000,
+      // Retry de conexão
+      retryWrites: true,
+      // Retry de leitura
+      retryReads: true,
+      // Pool de conexões
+      maxPoolSize: 10,
+      // Min pool size
+      minPoolSize: 1,
+    };
+    
+    client = new MongoClient(process.env.MONGODB_URI, options);
   }
   return client;
 }
