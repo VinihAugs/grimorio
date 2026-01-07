@@ -65,20 +65,29 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 
 // Session configuration
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production", // HTTPS em produção
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax", // Usa 'lax' mesmo em produção já que é o mesmo domínio
-      // sameSite: "none" só é necessário para cross-domain, mas aqui é o mesmo domínio
-    },
-  })
-);
+const sessionConfig: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
+  resave: false,
+  saveUninitialized: false,
+  name: "connect.sid", // Nome padrão do cookie de sessão
+  cookie: {
+    secure: process.env.NODE_ENV === "production", // HTTPS em produção
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    sameSite: "lax", // Usa 'lax' mesmo em produção já que é o mesmo domínio
+    // sameSite: "none" só é necessário para cross-domain, mas aqui é o mesmo domínio
+  },
+};
+
+// Log da configuração de sessão
+console.log("🍪 Session config:", {
+  secure: sessionConfig.cookie?.secure,
+  sameSite: sessionConfig.cookie?.sameSite,
+  httpOnly: sessionConfig.cookie?.httpOnly,
+  name: sessionConfig.name
+});
+
+app.use(session(sessionConfig));
 
 // Initialize Passport
 app.use(passport.initialize());
