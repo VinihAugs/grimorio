@@ -20,6 +20,25 @@ import "./auth";
 const app = express();
 const httpServer = createServer(app);
 
+// CORS configuration - permite cookies cross-origin
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  // Permite requisições do mesmo domínio ou de qualquer origem em desenvolvimento
+  if (origin || process.env.NODE_ENV !== "production") {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
+  
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -43,9 +62,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production", // HTTPS em produção
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Permite cookies cross-site em produção (necessário para HTTPS)
     },
   })
 );
