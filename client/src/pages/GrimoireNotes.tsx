@@ -201,8 +201,20 @@ export default function GrimoireNotes() {
   }
 
   return (
-    <div className="min-h-screen bg-background grimoire-texture pb-24">
-      <div className="max-w-2xl mx-auto px-6 py-8 relative">
+    <div 
+      className="min-h-screen bg-background grimoire-texture pb-24 relative"
+      style={{
+        backgroundImage: 'url(/serp_note.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Overlay escuro para melhorar legibilidade */}
+      <div className="absolute inset-0 bg-black/40"></div>
+      
+      <div className="max-w-2xl mx-auto px-6 py-8 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
