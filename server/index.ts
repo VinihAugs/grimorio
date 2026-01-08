@@ -88,20 +88,16 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration - usa MongoDB store se MONGODB_URI estiver configurado
-let sessionStore: MongoStore | null = null;
-
 // MongoDB Session Store será configurado após a conexão MongoDB estar estabelecida
 let sessionStore: MongoStore | null = null;
 
-// Session configuration - será atualizada após MongoDB conectar
-// Por enquanto, configura sem store (será atualizado depois)
-const createSessionConfig = (store: MongoStore | null): session.SessionOptions => ({
+// Session configuration - inicialmente sem store (será atualizado quando MongoDB conectar)
+const sessionConfig: session.SessionOptions = {
   secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
   resave: false,
   saveUninitialized: false,
   name: "connect.sid",
-  store: store || undefined,
+  store: undefined, // Será atualizado após MongoDB conectar
   cookie: {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
@@ -110,10 +106,7 @@ const createSessionConfig = (store: MongoStore | null): session.SessionOptions =
     path: "/",
   },
   rolling: false,
-});
-
-// Configura sessão inicialmente sem store (será atualizado quando MongoDB conectar)
-let sessionConfig = createSessionConfig(sessionStore);
+};
 
 // Log da configuração de sessão
 console.log("🍪 Session config:", {
@@ -125,7 +118,8 @@ console.log("🍪 Session config:", {
 });
 
 // Configura sessão ANTES das rotas e outros middlewares
-app.use(session(sessionConfig));
+const sessionMiddleware = session(sessionConfig);
+app.use(sessionMiddleware);
 
 // Middleware para garantir que a sessão seja carregada do MongoDB
 app.use((req, res, next) => {
@@ -195,6 +189,28 @@ app.use((req, res, next) => {
   try {
     const db = await connectMongoDB();
     if (db) {
+      // Configura MongoDB Session Store usando o client já conectado
+      try {
+        const mongoClient = getClient();
+        if (mongoClient) {
+          sessionStore = MongoStore.create({
+            client: mongoClient,
+            dbName: "necro_tome",
+            collectionName: "sessions",
+            ttl: 7 * 24 * 60 * 60, // 7 days em segundos
+          });
+          console.log("✅ MongoDB Session Store configurado com client existente");
+          
+          // Atualiza o store do middleware de sessão
+          if ((sessionMiddleware as any).store) {
+            (sessionMiddleware as any).store = sessionStore;
+            console.log("✅ Store do session middleware atualizado para MongoDB");
+          }
+        }
+      } catch (storeError) {
+        console.warn("⚠️  Erro ao configurar MongoDB Session Store:", storeError);
+      }
+      
       // Inicializa o banco (cria coleções e índices)
       try {
         const { initializeDatabase } = await import("./init-db");
