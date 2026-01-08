@@ -98,11 +98,14 @@ const sessionConfig: session.SessionOptions = {
   name: "connect.sid", // Nome padrão do cookie de sessão
   store: sessionStore || undefined, // Usa MongoDB store se disponível
   cookie: {
-    secure: process.env.NODE_ENV === "production", // HTTPS em produção
+    secure: process.env.NODE_ENV === "production", // HTTPS em produção (obrigatório para sameSite: "none")
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
-    // sameSite: "none" só é necessário para cross-domain com secure: true
+    // sameSite: "none" é necessário para cookies funcionarem corretamente em produção com HTTPS
+    // Requer secure: true
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    // Não define domain para permitir que funcione em subdomínios
+    path: "/", // Garante que o cookie seja enviado para todas as rotas
   },
 };
 

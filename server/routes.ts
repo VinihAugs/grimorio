@@ -212,7 +212,17 @@ export async function registerRoutes(
           }
           
           console.log("✅ Sessão salva no MongoDB");
-          console.log("🍪 Set-Cookie header será enviado:", res.getHeader("Set-Cookie"));
+          
+          // Verifica se o Set-Cookie está sendo enviado
+          const setCookieHeader = res.getHeader("Set-Cookie");
+          console.log("🍪 Set-Cookie header:", setCookieHeader);
+          
+          if (!setCookieHeader) {
+            console.error("❌ ATENÇÃO: Set-Cookie header não está sendo enviado!");
+          } else {
+            console.log("✅ Set-Cookie header está sendo enviado corretamente");
+          }
+          
           const userId = user._id?.toString ? user._id.toString() : String(user._id);
           res.json({
             id: userId,
