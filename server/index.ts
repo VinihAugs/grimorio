@@ -110,8 +110,8 @@ if (process.env.MONGODB_URI) {
 // Session configuration - usa MongoDB store se disponível, senão memória
 const sessionConfig: session.SessionOptions = {
   secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
-  resave: true, // MUDADO: resave: true para garantir que a sessão seja salva
-  saveUninitialized: true, // MUDADO: saveUninitialized: true para garantir que sessões vazias sejam salvas
+  resave: false, // Volta para false - o store gerencia isso
+  saveUninitialized: false, // Volta para false - só salva quando necessário
   name: "connect.sid", // Nome padrão do cookie de sessão
   store: sessionStore || undefined, // Usa MongoDB store se disponível
   cookie: {
@@ -125,7 +125,7 @@ const sessionConfig: session.SessionOptions = {
     path: "/", // Garante que o cookie seja enviado para todas as rotas
   },
   // Força o envio do cookie mesmo em requisições que não modificam a sessão
-  rolling: true, // Renova o cookie a cada requisição
+  rolling: false, // Desabilita rolling para evitar problemas
 };
 
 // Log da configuração de sessão
