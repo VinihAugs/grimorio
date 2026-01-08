@@ -10,11 +10,12 @@ if (process.env.MONGODB_URI) {
 
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import MongoStore from "connect-mongo";
 import passport from "passport";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { connectMongoDB } from "./mongodb";
+import { connectMongoDB, getClient } from "./mongodb";
 import "./auth";
 
 const app = express();
@@ -65,18 +66,38 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration
+// Session configuration - usa MongoDB store se MONGODB_URI estiver configurado
+let sessionStore: MongoStore | null = null;
+
+if (process.env.MONGODB_URI) {
+  try {
+    // Cria MongoDB Session Store usando a connection string diretamente
+    sessionStore = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      dbName: "necro_tome",
+      collectionName: "sessions",
+      ttl: 7 * 24 * 60 * 60, // 7 days em segundos
+    });
+    console.log("✅ MongoDB Session Store configurado com connection string");
+  } catch (error) {
+    console.warn("⚠️  Erro ao configurar MongoDB Session Store:", error);
+    console.log("⚠️  Usando armazenamento em memória...");
+  }
+}
+
+// Session configuration - usa MongoDB store se disponível, senão memória
 const sessionConfig: session.SessionOptions = {
   secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
   resave: false,
   saveUninitialized: false,
   name: "connect.sid", // Nome padrão do cookie de sessão
+  store: sessionStore || undefined, // Usa MongoDB store se disponível
   cookie: {
     secure: process.env.NODE_ENV === "production", // HTTPS em produção
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    sameSite: "lax", // Usa 'lax' mesmo em produção já que é o mesmo domínio
-    // sameSite: "none" só é necessário para cross-domain, mas aqui é o mesmo domínio
+    sameSite: process.env.NODE_ENV === "production" ? "lax" : "lax",
+    // sameSite: "none" só é necessário para cross-domain com secure: true
   },
 };
 
@@ -85,12 +106,14 @@ console.log("🍪 Session config:", {
   secure: sessionConfig.cookie?.secure,
   sameSite: sessionConfig.cookie?.sameSite,
   httpOnly: sessionConfig.cookie?.httpOnly,
-  name: sessionConfig.name
+  name: sessionConfig.name,
+  store: sessionStore ? "MongoDB" : "Memory"
 });
 
+// Configura sessão ANTES das rotas e outros middlewares
 app.use(session(sessionConfig));
 
-// Initialize Passport
+// Initialize Passport (após sessão estar configurada)
 app.use(passport.initialize());
 app.use(passport.session());
 

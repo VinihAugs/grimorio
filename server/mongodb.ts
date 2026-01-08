@@ -7,7 +7,7 @@ let connectionPromise: Promise<Db | null> | null = null;
 let lastConnectionCheck = 0;
 const CONNECTION_CHECK_INTERVAL = 30000; // Verifica conexão a cada 30 segundos
 
-function getClient(): MongoClient | null {
+export function getClient(): MongoClient | null {
   if (!process.env.MONGODB_URI) {
     return null;
   }
