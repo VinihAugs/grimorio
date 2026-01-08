@@ -292,11 +292,27 @@ export async function registerRoutes(
     })(req, res, next);
   });
 
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", requireAuthHybrid, (req, res) => {
+    console.log("🚪 POST /api/auth/logout - Logout iniciado");
+    
+    // Remove sessão se existir
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("❌ Erro ao destruir sessão:", err);
+        } else {
+          console.log("✅ Sessão destruída com sucesso");
+        }
+      });
+    }
+    
+    // Logout do passport
     req.logout((err) => {
       if (err) {
+        console.error("❌ Erro no logout do passport:", err);
         return res.status(500).json({ message: "Erro ao fazer logout" });
       }
+      console.log("✅ Logout do passport realizado");
       res.json({ message: "Logout realizado com sucesso" });
     });
   });

@@ -149,9 +149,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) throw new Error("Erro ao fazer logout");
     },
-    onSuccess: () => {
-      const { removeToken } = require("@/lib/auth-token");
+    onSuccess: async () => {
+      // Remove token do localStorage
+      const { removeToken } = await import("@/lib/auth-token");
       removeToken();
+      
+      // Limpa estado do usuário
+      setUser(null);
+      
+      // Limpa todas as queries do cache
+      queryClient.clear();
+      
+      // Força limpeza do localStorage também
+      localStorage.removeItem("necro_tome_auth_token");
+      
+      console.log("✅ Logout realizado com sucesso - token removido");
+      
+      // Redireciona para login
+      setLocation("/login");
+    },
+    onError: async (error) => {
+      console.error("❌ Erro no logout:", error);
+      // Mesmo se der erro, limpa o token e redireciona
+      const { removeToken } = await import("@/lib/auth-token");
+      removeToken();
+      localStorage.removeItem("necro_tome_auth_token");
       setUser(null);
       queryClient.clear();
       setLocation("/login");
