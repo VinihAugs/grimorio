@@ -365,9 +365,26 @@ export async function registerRoutes(
     try {
       console.log("🔍 GET /api/characters - Verificando autenticação...");
       console.log("🍪 Session ID:", req.sessionID);
+      console.log("🍪 Cookie header:", req.headers.cookie);
+      
+      // Verifica se há uma sessão no MongoDB
+      if (req.sessionID) {
+        try {
+          const db = await ensureMongoDBConnection();
+          if (db) {
+            const sessionDoc = await db.collection("sessions").findOne({ _id: req.sessionID });
+            console.log("🍪 Sessão no MongoDB:", sessionDoc ? "encontrada" : "NÃO encontrada");
+            if (sessionDoc) {
+              console.log("🍪 Sessão data:", JSON.stringify(sessionDoc).substring(0, 200));
+            }
+          }
+        } catch (error) {
+          console.error("❌ Erro ao verificar sessão no MongoDB:", error);
+        }
+      }
+      
       console.log("👤 req.isAuthenticated():", req.isAuthenticated());
       console.log("👤 req.user:", req.user ? "existe" : "null");
-      console.log("🍪 Cookie header:", req.headers.cookie);
       
       const user = getCurrentUser(req);
       if (!user?._id) {
