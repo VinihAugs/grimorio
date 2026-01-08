@@ -23,7 +23,6 @@ export default function Profile() {
   const [isEditingLevel, setIsEditingLevel] = useState(false);
   const [levelValue, setLevelValue] = useState(String(selectedCharacter?.level || 1));
 
-  // Atualiza o valor do nível quando o personagem selecionado mudar
   useEffect(() => {
     if (selectedCharacter) {
       setLevelValue(String(selectedCharacter.level || 1));
