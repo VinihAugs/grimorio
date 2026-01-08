@@ -165,8 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log("✅ Logout realizado com sucesso - token removido");
       
-      // Redireciona para login
-      setLocation("/login");
+      // Pequeno delay para garantir que tudo seja limpo antes do redirecionamento
+      setTimeout(() => {
+        setLocation("/login");
+      }, 100);
     },
     onError: async (error) => {
       console.error("❌ Erro no logout:", error);
@@ -176,7 +178,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("necro_tome_auth_token");
       setUser(null);
       queryClient.clear();
-      setLocation("/login");
+      setTimeout(() => {
+        setLocation("/login");
+      }, 100);
     },
   });
 
