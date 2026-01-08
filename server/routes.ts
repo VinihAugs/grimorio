@@ -24,13 +24,37 @@ export async function registerRoutes(
   console.log("  GET", api.characters.list.path);
   
   // Auth routes
-  app.get("/api/auth/me", (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     console.log("🔍 GET /api/auth/me - Verificando autenticação...");
     console.log("🍪 Session ID:", req.sessionID);
     console.log("🍪 Session exists:", !!req.session);
+    console.log("🍪 Session data:", req.session ? Object.keys(req.session) : "no session");
+    console.log("🍪 Cookie header:", req.headers.cookie);
+    
+    // Verifica se há uma sessão no MongoDB
+    if (req.sessionID) {
+      try {
+        const db = await ensureMongoDBConnection();
+        if (db) {
+          const sessionDoc = await db.collection("sessions").findOne({ _id: req.sessionID });
+          console.log("🍪 Sessão no MongoDB:", sessionDoc ? "encontrada" : "NÃO encontrada");
+          if (sessionDoc) {
+            console.log("🍪 Sessão data:", JSON.stringify(sessionDoc).substring(0, 200));
+          }
+        }
+      } catch (error) {
+        console.error("❌ Erro ao verificar sessão no MongoDB:", error);
+      }
+    }
+    
     console.log("👤 req.isAuthenticated():", req.isAuthenticated());
     console.log("👤 req.user:", req.user ? "existe" : "null");
-    console.log("🍪 Cookie header:", req.headers.cookie);
+    
+    // Tenta deserializar manualmente se necessário
+    if (!req.user && req.sessionID) {
+      console.log("🔧 Tentando deserializar usuário manualmente...");
+      // O passport deve fazer isso automaticamente, mas vamos verificar
+    }
     
     const user = getCurrentUser(req);
     if (user) {
