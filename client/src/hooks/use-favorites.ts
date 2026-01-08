@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type InsertFavorite } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
+import { type InsertFavorite } from "@shared/schema";
 import { apiUrl, getAuthHeaders } from "@/lib/api-config";
 
 // GET /api/favorites

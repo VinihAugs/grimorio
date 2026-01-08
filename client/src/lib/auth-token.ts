@@ -12,9 +12,9 @@ export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-export function getAuthHeaders(): HeadersInit {
+export function getAuthHeaders(): Record<string, string> {
   const token = getToken();
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   

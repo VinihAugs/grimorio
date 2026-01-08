@@ -36,9 +36,6 @@ const translationCache: Record<string, string> = {
   "sword-burst": "Explosão de Espadas",
   "thunderclap": "Estrondo",
   "word-of-radiance": "Palavra de Radiância",
-  "blade-ward": "Proteção com Lâmina",
-  "friends": "Amigos",
-  "true-strike": "Golpe Certeiro",
   
   // Level 1
   "cure-wounds": "Curar Ferimentos",
@@ -148,11 +145,9 @@ const translationCache: Record<string, string> = {
   "daylight": "Luz do Dia",
   "plant-growth": "Crescimento de Plantas",
   "speak-with-plants": "Falar com Plantas",
-  "wind-wall": "Muralha de Vento",
   "beacon-of-hope": "Sinal de Esperança",
   "mass-healing-word": "Palavra Curativa em Massa",
   "spirit-guardians": "Guardiões Espirituais",
-  "revivify": "Revivificar",
   
   // Level 4
   "blight": "Praga",
@@ -217,19 +212,15 @@ const translationCache: Record<string, string> = {
   "wall-of-ice": "Muralha de Gelo",
   "mass-suggestion": "Sugestão em Massa",
   "programmed-illusion": "Ilusão Programada",
-  "true-seeing": "Visão Verdadeira",
   "contingency": "Contingência",
-  "create-undead": "Criar Morto-Vivo",
   "flesh-to-stone": "Carne em Pedra",
   "magic-jar": "Jarra Mágica",
   "move-earth": "Mover Terra",
-  "sunbeam": "Raio Solar",
   "transport-via-plants": "Transporte via Plantas",
   "wind-walk": "Caminhar no Vento",
   "word-of-recall": "Palavra de Recordação",
   "blade-barrier": "Barreira de Lâminas",
   "forbiddance": "Interdição",
-  "harm": "Dano",
   "heal": "Curar",
   "heroes-feast": "Banquete dos Heróis",
   "planar-ally": "Aliado Planar",
@@ -251,10 +242,8 @@ const translationCache: Record<string, string> = {
   "simulacrum": "Simulacro",
   "conjure-celestial": "Conjurar Celestial",
   "divine-word": "Palavra Divina",
-  "fire-storm": "Tempestade de Fogo",
   "plane-shift": "Mudança de Plano",
   "regenerate": "Regenerar",
-  "resurrection": "Ressurreição",
   
   // Level 8
   "clone": "Clone",
@@ -267,17 +256,13 @@ const translationCache: Record<string, string> = {
   "power-word-stun": "Palavra de Poder: Atordoar",
   "sunburst": "Explosão Solar",
   "dominate-monster": "Dominar Monstro",
-  "feeblemind": "Mente Débil",
   "glibness": "Eloquência",
   "maddening-darkness": "Escuridão Enlouquecedora",
-  "maze": "Labirinto",
   "animal-shapes": "Formas Animais",
   "antipathy-sympathy": "Antipatia/Simpatia",
   "control-weather": "Controlar Clima",
   "earthquake": "Terremoto",
-  "feeblemind": "Mente Débil",
   "holy-aura": "Aura Sagrada",
-  "sunburst": "Explosão Solar",
   
   // Level 9
   "astral-projection": "Projeção Astral",
@@ -293,7 +278,6 @@ const translationCache: Record<string, string> = {
   "imprisonment": "Aprisionamento",
   "mass-heal": "Curar em Massa",
   "power-word-heal": "Palavra de Poder: Curar",
-  "true-resurrection": "Ressurreição Verdadeira",
   "storm-of-vengeance": "Tempestade de Vingança",
 };
 

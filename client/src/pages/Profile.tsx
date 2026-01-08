@@ -60,25 +60,19 @@ export default function Profile() {
   };
 
   const handleLevelChange = (value: string) => {
-    // Remove caracteres não numéricos (incluindo pontos decimais, sinais negativos, etc)
     const numericValue = value.replace(/[^0-9]/g, '');
     
-    // Se estiver vazio, permite (para poder apagar e digitar novamente)
     if (numericValue === '') {
       setLevelValue('');
       return;
     }
     
     const num = parseInt(numericValue);
-    
-    // Não permite zero, negativos ou maior que 20
-    // Se for zero ou negativo, força para 1
     if (num < 1) {
       setLevelValue('1');
     } else if (num > 20) {
       setLevelValue('20');
     } else {
-      // Permite apenas valores inteiros entre 1 e 20
       setLevelValue(numericValue);
     }
   };

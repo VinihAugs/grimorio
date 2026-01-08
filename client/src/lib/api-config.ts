@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    Capacitor?: any;
+  }
+}
+
 function isCapacitor(): boolean {
   try {
     if (typeof window !== 'undefined') {
@@ -52,11 +58,11 @@ export function apiUrl(endpoint: string): string {
   return `${baseUrl}${cleanEndpoint}`;
 }
 
-export async function getAuthHeaders(additionalHeaders: HeadersInit = {}): Promise<HeadersInit> {
+export async function getAuthHeaders(additionalHeaders: Record<string, string> = {}): Promise<Record<string, string>> {
   const { getToken } = await import("./auth-token");
   const token = getToken();
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...additionalHeaders,
   };
