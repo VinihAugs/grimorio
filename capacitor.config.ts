@@ -7,9 +7,6 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    // Para desenvolvimento local, descomente as linhas abaixo e ajuste o IP
-    // url: 'http://SEU_IP_LOCAL:5000',
-    // cleartext: true
   },
   android: {
     buildOptions: {
