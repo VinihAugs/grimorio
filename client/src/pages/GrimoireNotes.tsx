@@ -13,6 +13,7 @@ import {
 import { Plus, Trash2, Edit2, ArrowLeft, Save, X, BookOpen } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { apiUrl, getAuthHeaders } from "@/lib/api-config";
 
 interface Note {
   id: string;
@@ -37,8 +38,9 @@ export default function GrimoireNotes() {
     queryKey: ["notes", selectedCharacter?.id],
     queryFn: async () => {
       if (!selectedCharacter?.id) return [];
-      const res = await fetch(`/api/notes/${selectedCharacter.id}`, { 
-        credentials: "include" 
+      const res = await fetch(apiUrl(`/api/notes/${selectedCharacter.id}`), { 
+        credentials: "include",
+        headers: await getAuthHeaders()
       });
       if (!res.ok) throw new Error("Erro ao buscar notas");
       return res.json() as Promise<Note[]>;
@@ -49,9 +51,9 @@ export default function GrimoireNotes() {
   const createMutation = useMutation({
     mutationFn: async (note: { title: string; content: string }) => {
       if (!selectedCharacter?.id) throw new Error("Personagem não selecionado");
-      const res = await fetch("/api/notes", {
+      const res = await fetch(apiUrl("/api/notes"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify({
           ...note,
@@ -84,9 +86,9 @@ export default function GrimoireNotes() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Note> }) => {
-      const res = await fetch(`/api/notes/${id}`, {
+      const res = await fetch(apiUrl(`/api/notes/${id}`), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify(updates),
       });
@@ -117,7 +119,7 @@ export default function GrimoireNotes() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/notes/${id}`, {
+      const res = await fetch(apiUrl(`/api/notes/${id}`), {
         method: "DELETE",
         credentials: "include",
       });

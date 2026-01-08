@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { dndClasses, type Character, type CreateCharacter, type DnDClass } from "@shared/character-schema";
 import { useToast } from "@/hooks/use-toast";
+import { apiUrl } from "@/lib/api-config";
 
 interface CharacterContextType {
   characters: Character[];
@@ -27,7 +28,11 @@ export const CharacterProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ["characters", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const res = await fetch("/api/characters", { credentials: "include" });
+      const { getAuthHeaders } = await import("@/lib/api-config");
+      const res = await fetch(apiUrl("/api/characters"), { 
+        credentials: "include",
+        headers: await getAuthHeaders()
+      });
       if (!res.ok) throw new Error("Erro ao buscar personagens");
       return res.json() as Promise<Character[]>;
     },
@@ -36,9 +41,10 @@ export const CharacterProvider = ({ children }: { children: ReactNode }) => {
 
   const createMutation = useMutation({
     mutationFn: async (character: Omit<CreateCharacter, "userId">) => {
-      const res = await fetch("/api/characters", {
+      const { getAuthHeaders } = await import("@/lib/api-config");
+      const res = await fetch(apiUrl("/api/characters"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify(character),
       });
@@ -67,7 +73,7 @@ export const CharacterProvider = ({ children }: { children: ReactNode }) => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Character> }) => {
-      const res = await fetch(`/api/characters/${id}`, {
+      const res = await fetch(apiUrl(`/api/characters/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -100,7 +106,7 @@ export const CharacterProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/characters/${id}`, {
+      const res = await fetch(apiUrl(`/api/characters/${id}`), {
         method: "DELETE",
         credentials: "include",
       });

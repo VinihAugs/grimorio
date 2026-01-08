@@ -8,6 +8,7 @@ import { characterStorage } from "./character-storage";
 import { noteStorage } from "./note-storage";
 import { api } from "@shared/routes";
 import { requireAuth, getCurrentUser } from "./auth";
+import { generateToken, requireAuthHybrid, getCurrentUserHybrid } from "./auth-token";
 import { getDB, ensureMongoDBConnection } from "./mongodb";
 import type { User } from "./auth";
 import { createCharacterSchema } from "@shared/character-schema";
@@ -24,7 +25,7 @@ export async function registerRoutes(
   console.log("  GET", api.characters.list.path);
   
   // Auth routes
-  app.get("/api/auth/me", async (req, res) => {
+  app.get("/api/auth/me", requireAuthHybrid, async (req, res) => {
     console.log("🔍 GET /api/auth/me - Verificando autenticação...");
     console.log("🍪 Session ID:", req.sessionID);
     console.log("🍪 Session exists:", !!req.session);
@@ -56,7 +57,7 @@ export async function registerRoutes(
       // O passport deve fazer isso automaticamente, mas vamos verificar
     }
     
-    const user = getCurrentUser(req);
+    const user = getCurrentUserHybrid(req) || getCurrentUser(req);
     if (user) {
       console.log("✅ Usuário autenticado:", user.email);
       res.json({
@@ -267,11 +268,17 @@ export async function registerRoutes(
           };
           
           const userId = user._id?.toString ? user._id.toString() : String(user._id);
+          
+          // GERA TOKEN JWT E RETORNA JUNTO COM A RESPOSTA
+          const token = generateToken(userId);
+          console.log("🔑 Token JWT gerado para:", user.email);
+          
           res.json({
             id: userId,
             email: user.email,
             name: user.name,
             avatar: user.avatar,
+            token: token, // TOKEN PARA SALVAR NO LOCALSTORAGE
           });
         });
       });
@@ -288,8 +295,8 @@ export async function registerRoutes(
   });
 
   // Protected routes - require authentication
-  app.get(api.favorites.list.path, requireAuth, async (req, res) => {
-    const user = getCurrentUser(req);
+  app.get(api.favorites.list.path, requireAuthHybrid, async (req, res) => {
+    const user = getCurrentUserHybrid(req) || getCurrentUser(req);
     if (!user?._id) {
       return res.status(401).json({ message: "Não autenticado" });
     }
@@ -297,9 +304,9 @@ export async function registerRoutes(
     res.json(favorites);
   });
 
-  app.post(api.favorites.create.path, requireAuth, async (req, res) => {
+  app.post(api.favorites.create.path, requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -317,8 +324,8 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.favorites.delete.path, requireAuth, async (req, res) => {
-    const user = getCurrentUser(req);
+  app.delete(api.favorites.delete.path, requireAuthHybrid, async (req, res) => {
+    const user = getCurrentUserHybrid(req) || getCurrentUser(req);
     if (!user?._id) {
       return res.status(401).json({ message: "Não auticado" });
     }
@@ -336,7 +343,7 @@ export async function registerRoutes(
   console.log("  DELETE", api.characters.delete.path);
   
   // Register character routes explicitly to ensure they're registered
-  app.get("/api/characters", requireAuth, async (req, res) => {
+  app.get("/api/characters", requireAuthHybrid, async (req, res) => {
     try {
       console.log("🔍 GET /api/characters - Verificando autenticação...");
       console.log("🍪 Session ID:", req.sessionID);
@@ -361,7 +368,7 @@ export async function registerRoutes(
       console.log("👤 req.isAuthenticated():", req.isAuthenticated());
       console.log("👤 req.user:", req.user ? "existe" : "null");
       
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         console.log("❌ Usuário não autenticado - sem _id");
         return res.status(401).json({ message: "Não autenticado" });
@@ -380,9 +387,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/characters/:id", requireAuth, async (req, res) => {
+  app.get("/api/characters/:id", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -402,12 +409,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/characters", requireAuth, async (req, res) => {
+  app.post("/api/characters", requireAuthHybrid, async (req, res) => {
     try {
       console.log("📝 POST /api/characters - Handler executado!");
       console.log("Body recebido:", JSON.stringify(req.body).substring(0, 200));
       
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         console.log("❌ Usuário não autenticado");
         return res.status(401).json({ message: "Não autenticado" });
@@ -439,9 +446,9 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/characters/:id", requireAuth, async (req, res) => {
+  app.put("/api/characters/:id", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -465,9 +472,9 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/characters/:id", requireAuth, async (req, res) => {
+  app.delete("/api/characters/:id", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -485,9 +492,9 @@ export async function registerRoutes(
   });
 
   // Note routes - IMPORTANT: POST must come before GET with params
-  app.post("/api/notes", requireAuth, async (req, res) => {
+  app.post("/api/notes", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -515,9 +522,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/notes/:characterId", requireAuth, async (req, res) => {
+  app.get("/api/notes/:characterId", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -534,9 +541,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/notes/:id", requireAuth, async (req, res) => {
+  app.get("/api/notes/:id", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -556,9 +563,9 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/notes/:id", requireAuth, async (req, res) => {
+  app.put("/api/notes/:id", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }
@@ -576,9 +583,9 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/notes/:id", requireAuth, async (req, res) => {
+  app.delete("/api/notes/:id", requireAuthHybrid, async (req, res) => {
     try {
-      const user = getCurrentUser(req);
+      const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
         return res.status(401).json({ message: "Não autenticado" });
       }

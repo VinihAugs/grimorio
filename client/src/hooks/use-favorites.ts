@@ -1,12 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl, type InsertFavorite } from "@shared/routes";
+import { apiUrl, getAuthHeaders } from "@/lib/api-config";
 
 // GET /api/favorites
 export function useFavorites() {
   return useQuery({
     queryKey: [api.favorites.list.path],
     queryFn: async () => {
-      const res = await fetch(api.favorites.list.path, { credentials: "include" });
+      const res = await fetch(apiUrl(api.favorites.list.path), { 
+        credentials: "include",
+        headers: await getAuthHeaders()
+      });
       if (!res.ok) throw new Error("Failed to fetch favorites");
       return api.favorites.list.responses[200].parse(await res.json());
     },
@@ -19,9 +23,9 @@ export function useAddFavorite() {
   return useMutation({
     mutationFn: async (data: InsertFavorite) => {
       const validated = api.favorites.create.input.parse(data);
-      const res = await fetch(api.favorites.create.path, {
+      const res = await fetch(apiUrl(api.favorites.create.path), {
         method: api.favorites.create.method,
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         body: JSON.stringify(validated),
         credentials: "include",
       });
@@ -40,8 +44,9 @@ export function useRemoveFavorite() {
   return useMutation({
     mutationFn: async (spellIndex: string) => {
       const url = buildUrl(api.favorites.delete.path, { index: spellIndex });
-      const res = await fetch(url, { 
+      const res = await fetch(apiUrl(url), { 
         method: api.favorites.delete.method,
+        headers: await getAuthHeaders(),
         credentials: "include" 
       });
       if (!res.ok) throw new Error("Failed to remove favorite");

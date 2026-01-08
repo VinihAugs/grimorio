@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { apiUrl } from "@/lib/api-config";
 
 interface User {
   id: string;
@@ -28,7 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: currentUser, isLoading } = useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
+      const { getAuthHeaders } = await import("@/lib/auth-token");
+      const res = await fetch(apiUrl("/api/auth/me"), { 
+        credentials: "include",
+        headers: getAuthHeaders()
+      });
       if (res.status === 401) {
         return null;
       }
@@ -44,9 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const res = await fetch("/api/auth/login", {
+      const { getAuthHeaders } = await import("@/lib/api-config");
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
@@ -63,6 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) {
         throw new Error(data.message || "Erro ao fazer login");
       }
+      
+      // SALVA O TOKEN NO LOCALSTORAGE
+      if (data.token) {
+        const { saveToken } = await import("@/lib/auth-token");
+        saveToken(data.token);
+      }
+      
       return data as User;
     },
     onSuccess: (data) => {
@@ -86,9 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string;
       name: string;
     }) => {
-      const res = await fetch("/api/auth/register", {
+      const { getAuthHeaders } = await import("@/lib/api-config");
+      const res = await fetch(apiUrl("/api/auth/register"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify({ email, password, name }),
       });
@@ -120,13 +134,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/auth/logout", {
+      const { getAuthHeaders } = await import("@/lib/api-config");
+      const res = await fetch(apiUrl("/api/auth/logout"), {
         method: "POST",
+        headers: await getAuthHeaders(),
         credentials: "include",
       });
       if (!res.ok) throw new Error("Erro ao fazer logout");
     },
     onSuccess: () => {
+      const { removeToken } = require("@/lib/auth-token");
+      removeToken();
       setUser(null);
       queryClient.clear();
       setLocation("/login");
