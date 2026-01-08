@@ -211,11 +211,9 @@ export default function GrimoireNotes() {
         backgroundAttachment: 'fixed'
       }}
     >
-      {/* Overlay escuro para melhorar legibilidade */}
       <div className="absolute inset-0 bg-black/40"></div>
       
       <div className="max-w-2xl mx-auto px-6 py-8 relative z-10">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
@@ -239,11 +237,9 @@ export default function GrimoireNotes() {
               </Button>
             )}
           </div>
-          <div className="w-20" /> {/* Spacer */}
+          <div className="w-20" />
         </div>
 
-
-        {/* Notes List */}
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin text-primary">⏳</div>
@@ -300,7 +296,6 @@ export default function GrimoireNotes() {
           </div>
         )}
 
-        {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="bg-background border-white/10 text-white !rounded-md">
             <DialogHeader>
@@ -358,7 +353,6 @@ export default function GrimoireNotes() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="bg-background border-white/10 text-white !rounded-md">
             <DialogHeader>

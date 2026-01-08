@@ -150,7 +150,6 @@ export default function Profile() {
           <StatCard icon={Zap} label="Status" value="Online" />
         </div>
 
-        {/* Grimório */}
         <button
           onClick={() => {
             if (!selectedCharacter) {
@@ -170,7 +169,6 @@ export default function Profile() {
           </div>
         </button>
 
-        {/* Botão Alterar Perfil */}
         <button 
           onClick={() => setLocation("/characters")}
           className="w-full py-4 rounded-xl border-2 border-primary/60 text-primary font-display tracking-widest bg-black/40 hover:bg-black/50 transition-colors uppercase text-sm flex items-center justify-center gap-2"
@@ -179,7 +177,6 @@ export default function Profile() {
           Alterar Perfil
         </button>
 
-        {/* Botão Sair */}
         <button 
           onClick={handleLogout}
           className="w-full py-4 rounded-xl border-2 border-destructive/80 text-destructive font-display tracking-widest bg-black/40 hover:bg-black/50 transition-colors uppercase text-sm flex items-center justify-center gap-2"

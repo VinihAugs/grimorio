@@ -1,7 +1,6 @@
 import { getDB } from "./mongodb";
 import type { InsertFavorite, Favorite } from "@shared/schema";
 
-// Tipo estendido para incluir characterId opcional
 type InsertFavoriteWithCharacter = InsertFavorite & { characterId?: string };
 type FavoriteWithExtras = Favorite & { userId: string; characterId?: string };
 
@@ -30,14 +29,12 @@ export class MongoDBStorage implements IStorage {
       "favorites"
     );
 
-    // Check if already exists
     const existing = await favoritesCollection.findOne({
       spellIndex: favorite.spellIndex,
       userId,
     });
 
     if (existing) {
-      // Converter para o formato esperado (id como number)
       return {
         id: typeof existing.id === 'string' ? parseInt(existing.id) || 0 : (existing.id as number) || 0,
         spellIndex: existing.spellIndex,
@@ -47,14 +44,12 @@ export class MongoDBStorage implements IStorage {
       };
     }
 
-    // Create new favorite
     const newFavorite: Omit<FavoriteWithExtras, "id"> = {
       spellIndex: favorite.spellIndex,
       spellName: favorite.spellName,
       level: favorite.level || null,
       createdAt: new Date(),
       userId,
-      // Adicionar characterId se fornecido (opcional)
       ...(favorite.characterId && { characterId: favorite.characterId }),
     };
     

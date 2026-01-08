@@ -3,7 +3,6 @@ import { api, buildUrl } from "@shared/routes";
 import { type InsertFavorite } from "@shared/schema";
 import { apiUrl, getAuthHeaders } from "@/lib/api-config";
 
-// GET /api/favorites
 export function useFavorites() {
   return useQuery({
     queryKey: [api.favorites.list.path],
@@ -18,7 +17,6 @@ export function useFavorites() {
   });
 }
 
-// POST /api/favorites
 export function useAddFavorite() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -39,7 +37,6 @@ export function useAddFavorite() {
   });
 }
 
-// DELETE /api/favorites/:index
 export function useRemoveFavorite() {
   const queryClient = useQueryClient();
   return useMutation({
