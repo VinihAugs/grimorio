@@ -133,6 +133,12 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/login", async (req, res, next) => {
+    console.log("🔐 POST /api/auth/login - Requisição recebida!");
+    console.log("📦 Body recebido:", JSON.stringify(req.body));
+    console.log("🍪 Cookie header recebido:", req.headers.cookie);
+    console.log("🌐 Origin:", req.headers.origin);
+    console.log("🌐 Host:", req.headers.host);
+    
     // Garante que MongoDB está conectado antes de autenticar (com timeout)
     try {
       const db = await Promise.race([
@@ -141,12 +147,14 @@ export async function registerRoutes(
       ]);
       
       if (!db) {
+        console.error("❌ MongoDB não disponível no login");
         return res.status(503).json({ 
           message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes." 
         });
       }
+      console.log("✅ MongoDB conectado para login");
     } catch (error: any) {
-      console.error("Erro ao conectar MongoDB no login:", error);
+      console.error("❌ Erro ao conectar MongoDB no login:", error);
       return res.status(503).json({ 
         message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
       });
@@ -154,6 +162,7 @@ export async function registerRoutes(
     // Continua com a autenticação
     next();
   }, (req, res, next) => {
+    console.log("🔐 Passando para passport.authenticate...");
     // Middleware para capturar erros do Passport
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {

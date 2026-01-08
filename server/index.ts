@@ -27,14 +27,19 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   const host = req.headers.host;
   
-  // Se a requisição é do mesmo domínio, não precisa de CORS
-  // Mas vamos configurar mesmo assim para garantir
-  if (origin && host && origin.includes(host.split(':')[0])) {
-    // Mesmo domínio - permite
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  } else if (origin) {
-    // Cross-origin - permite com credenciais
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  // Em produção, permite requisições do mesmo domínio
+  // Em desenvolvimento, permite qualquer origem
+  if (process.env.NODE_ENV === "production") {
+    // Em produção, permite requisições do mesmo domínio (grimorio.onrender.com)
+    if (origin && (origin.includes("grimorio.onrender.com") || origin === `https://${host}`)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else if (origin) {
+      // Permite também requisições do mesmo domínio sem protocolo
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+  } else {
+    // Em desenvolvimento, permite qualquer origem
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
   }
   
   res.setHeader("Access-Control-Allow-Credentials", "true");
