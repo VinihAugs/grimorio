@@ -213,33 +213,50 @@ export async function registerRoutes(
           
           console.log("✅ Sessão salva no MongoDB");
           
-          // FORÇA o envio do cookie usando a assinatura correta do express-session
-          // O express-session assina o cookie com o secret, então precisamos usar o método correto
-          const sessionCookie = req.session.cookie;
-          const signedSessionID = `s:${req.sessionID}`;
+          // FORÇA o envio do cookie - o express-session deve fazer isso automaticamente,
+          // mas vamos garantir que está sendo enviado
+          const setCookieHeader = res.getHeader("Set-Cookie");
+          console.log("🍪 Set-Cookie header (após save):", setCookieHeader);
           
-          // Cria o cookie com a assinatura correta
-          const cookie = require('cookie');
-          const session = require('express-session');
-          
-          // Usa o método do express-session para gerar o cookie assinado
-          const cookieValue = sessionCookie.serialize('connect.sid', req.sessionID);
-          
-          console.log("🍪 Cookie gerado:", cookieValue.substring(0, 100) + "...");
-          
-          // Define o cookie manualmente com todos os atributos corretos
-          const cookieString = `connect.sid=${cookieValue}; Path=${sessionCookie.path || '/'}; HttpOnly; ${sessionCookie.secure ? 'Secure;' : ''} SameSite=${sessionCookie.sameSite || 'None'}; Max-Age=${Math.floor(sessionCookie.maxAge / 1000)}`;
-          
-          res.setHeader("Set-Cookie", cookieString);
-          
-          console.log("🍪 Set-Cookie header FORÇADO:", cookieString.substring(0, 100) + "...");
+          // Se não estiver sendo enviado, força manualmente
+          if (!setCookieHeader) {
+            console.error("❌ ATENÇÃO: Set-Cookie não está sendo enviado! Forçando...");
+            
+            // Usa o método do express-session para gerar o cookie assinado
+            const sessionSecret = process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production";
+            const cookie = require('cookie');
+            const crypto = require('crypto');
+            
+            // Assina o session ID (express-session usa este formato)
+            const signature = crypto
+              .createHmac('sha256', sessionSecret)
+              .update(`s:${req.sessionID}`)
+              .digest('base64')
+              .replace(/=+$/, '');
+            
+            const signedValue = `s:${req.sessionID}.${signature}`;
+            const sessionCookie = req.session.cookie;
+            
+            // Cria o cookie string completo
+            const cookieString = `connect.sid=${signedValue}; Path=${sessionCookie.path || '/'}; HttpOnly; ${sessionCookie.secure ? 'Secure;' : ''} SameSite=${sessionCookie.sameSite || 'None'}; Max-Age=${Math.floor(sessionCookie.maxAge / 1000)}`;
+            
+            res.setHeader("Set-Cookie", cookieString);
+            console.log("🍪 Set-Cookie header FORÇADO:", cookieString.substring(0, 100) + "...");
+          } else {
+            console.log("✅ Set-Cookie header está sendo enviado corretamente pelo express-session");
+          }
           
           // Hook no res.end para garantir que o cookie seja enviado
           const originalEnd = res.end;
           res.end = function(chunk?: any, encoding?: any) {
             // Verifica novamente antes de enviar
-            if (!res.getHeader("Set-Cookie")) {
-              console.error("❌ Cookie ainda não está no header! Forçando novamente...");
+            const finalCookie = res.getHeader("Set-Cookie");
+            if (!finalCookie) {
+              console.error("❌ Cookie ainda não está no header no res.end! Forçando novamente...");
+              // Tenta novamente com o método do express-session
+              const sessionCookie = req.session.cookie;
+              const signedValue = `s:${req.sessionID}`;
+              const cookieString = `connect.sid=${signedValue}; Path=${sessionCookie.path || '/'}; HttpOnly; ${sessionCookie.secure ? 'Secure;' : ''} SameSite=${sessionCookie.sameSite || 'None'}; Max-Age=${Math.floor(sessionCookie.maxAge / 1000)}`;
               res.setHeader("Set-Cookie", cookieString);
             }
             console.log("🍪 Headers finais no res.end:", {
