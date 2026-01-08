@@ -56,7 +56,6 @@ export default function Profile() {
       await updateCharacter(selectedCharacter.id, { level: newLevel });
       setIsEditingLevel(false);
     } catch (error) {
-      console.error("Erro ao atualizar nível:", error);
     }
   };
 

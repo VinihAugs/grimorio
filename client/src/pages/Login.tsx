@@ -51,7 +51,6 @@ export default function Login() {
     <div className="min-h-screen w-full flex items-center justify-center p-6 relative">
       <div ref={vantaRef} className="absolute inset-0 z-0" />
       <div className="w-full max-w-md space-y-8 relative z-10">
-        {/* Logo/Title */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="relative">

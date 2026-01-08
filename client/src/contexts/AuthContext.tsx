@@ -70,7 +70,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Erro ao fazer login");
       }
       
-      // SALVA O TOKEN NO LOCALSTORAGE
       if (data.token) {
         const { saveToken } = await import("@/lib/auth-token");
         saveToken(data.token);
@@ -79,10 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data as User;
     },
     onSuccess: (data) => {
-      // Atualiza a query diretamente para evitar estado de loading
       queryClient.setQueryData(["auth", "me"], data);
       setUser(data);
-      // Pequeno delay para garantir que o estado seja atualizado antes do redirecionamento
       setTimeout(() => {
         setLocation("/characters");
       }, 0);
@@ -120,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Erro ao criar conta");
       }
       
-      // SALVA O TOKEN NO LOCALSTORAGE
       if (data.token) {
         const { saveToken } = await import("@/lib/auth-token");
         saveToken(data.token);
@@ -129,10 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data as User;
     },
     onSuccess: (data) => {
-      // Atualiza a query diretamente para evitar estado de loading
       queryClient.setQueryData(["auth", "me"], data);
       setUser(data);
-      // Pequeno delay para garantir que o estado seja atualizado antes do redirecionamento
       setTimeout(() => {
         setLocation("/characters");
       }, 0);
@@ -150,29 +144,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error("Erro ao fazer logout");
     },
     onSuccess: async () => {
-      // Remove token do localStorage
       const { removeToken } = await import("@/lib/auth-token");
       removeToken();
-      
-      // Limpa estado do usuário
       setUser(null);
-      
-      // Limpa todas as queries do cache
       queryClient.clear();
-      
-      // Força limpeza do localStorage também
       localStorage.removeItem("necro_tome_auth_token");
-      
-      console.log("✅ Logout realizado com sucesso - token removido");
-      
-      // Pequeno delay para garantir que tudo seja limpo antes do redirecionamento
       setTimeout(() => {
         setLocation("/login");
       }, 100);
     },
-    onError: async (error) => {
-      console.error("❌ Erro no logout:", error);
-      // Mesmo se der erro, limpa o token e redireciona
+    onError: async () => {
       const { removeToken } = await import("@/lib/auth-token");
       removeToken();
       localStorage.removeItem("necro_tome_auth_token");

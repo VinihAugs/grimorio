@@ -22,7 +22,6 @@ export function clearSpellCache(spellIndex: string) {
       localStorage.setItem("spell-translations-cache", JSON.stringify(cache));
     }
   } catch (e) {
-    console.warn("Erro ao limpar cache do feitiço:", e);
   }
 }
 

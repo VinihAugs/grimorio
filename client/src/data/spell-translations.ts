@@ -308,7 +308,6 @@ function loadCache(): Record<string, string> {
       return JSON.parse(cached);
     }
   } catch (e) {
-    console.warn("Erro ao carregar cache de traduções:", e);
   }
   return {};
 }
@@ -318,7 +317,6 @@ function saveCache(cache: Record<string, string>) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch (e) {
-    console.warn("Erro ao salvar cache de traduções:", e);
   }
 }
 
@@ -371,7 +369,6 @@ async function translateSpellNameAPI(spellName: string): Promise<string> {
 
     return spellName;
   } catch (error) {
-    console.error("Erro na tradução:", error);
     return spellName;
   }
 }
@@ -523,6 +520,5 @@ export function clearTranslationCache() {
   try {
     localStorage.removeItem(CACHE_KEY);
   } catch (e) {
-    console.warn("Erro ao limpar cache:", e);
   }
 }

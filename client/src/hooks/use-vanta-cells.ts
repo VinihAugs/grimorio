@@ -70,7 +70,6 @@ export function useVantaCells(options: Partial<VantaCellsOptions> = {}) {
       };
       document.body.appendChild(threeScript);
     } else {
-      // Scripts já carregados, inicializar diretamente
       if (vantaRef.current) {
         vantaRef.current.destroy();
       }

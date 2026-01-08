@@ -19,47 +19,9 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  // Debug: Log todas as rotas registradas
-  console.log("🔧 Registrando rotas de personagens...");
-  console.log("  POST", api.characters.create.path);
-  console.log("  GET", api.characters.list.path);
-  
-  // Auth routes
   app.get("/api/auth/me", requireAuthHybrid, async (req, res) => {
-    console.log("🔍 GET /api/auth/me - Verificando autenticação...");
-    console.log("🍪 Session ID:", req.sessionID);
-    console.log("🍪 Session exists:", !!req.session);
-    console.log("🍪 Session data:", req.session ? Object.keys(req.session) : "no session");
-    console.log("🍪 Cookie header:", req.headers.cookie);
-    
-    // Verifica se há uma sessão no MongoDB
-    if (req.sessionID) {
-      try {
-        const db = await ensureMongoDBConnection();
-        if (db) {
-          const sessionDoc = await db.collection("sessions").findOne({ _id: req.sessionID });
-          console.log("🍪 Sessão no MongoDB:", sessionDoc ? "encontrada" : "NÃO encontrada");
-          if (sessionDoc) {
-            console.log("🍪 Sessão data:", JSON.stringify(sessionDoc).substring(0, 200));
-          }
-        }
-      } catch (error) {
-        console.error("❌ Erro ao verificar sessão no MongoDB:", error);
-      }
-    }
-    
-    console.log("👤 req.isAuthenticated():", req.isAuthenticated());
-    console.log("👤 req.user:", req.user ? "existe" : "null");
-    
-    // Tenta deserializar manualmente se necessário
-    if (!req.user && req.sessionID) {
-      console.log("🔧 Tentando deserializar usuário manualmente...");
-      // O passport deve fazer isso automaticamente, mas vamos verificar
-    }
-    
     const user = getCurrentUserHybrid(req) || getCurrentUser(req);
     if (user) {
-      console.log("✅ Usuário autenticado:", user.email);
       res.json({
         id: user._id,
         email: user.email,
@@ -67,7 +29,6 @@ export async function registerRoutes(
         avatar: user.avatar,
       });
     } else {
-      console.log("❌ Usuário não autenticado");
       res.status(401).json({ message: "Não autenticado" });
     }
   });
@@ -80,15 +41,13 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Email, senha e nome são obrigatórios" });
       }
 
-      // Garante que MongoDB está conectado (com timeout)
       let db;
       try {
         db = await Promise.race([
           ensureMongoDBConnection(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)) // Timeout de 5 segundos
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))
         ]);
       } catch (error) {
-        console.error("Erro ao conectar MongoDB:", error);
         db = null;
       }
       
@@ -101,16 +60,13 @@ export async function registerRoutes(
       try {
         const usersCollection = db.collection<User>("users");
 
-        // Check if user exists
         const existingUser = await usersCollection.findOne({ email });
         if (existingUser) {
           return res.status(400).json({ message: "Email já cadastrado" });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user
         const newUser: User = {
           email,
           name,
@@ -119,16 +75,13 @@ export async function registerRoutes(
         };
 
         const result = await usersCollection.insertOne(newUser as any);
-        // Busca o usuário criado para ter o formato correto
         const createdUser = await usersCollection.findOne({ _id: result.insertedId });
         if (!createdUser) {
           return res.status(500).json({ message: "Erro ao criar usuário" });
         }
 
-        // Auto login
         req.login(createdUser, (err) => {
           if (err) {
-            console.error("Login error:", err);
             return res.status(500).json({ 
               message: "Erro ao fazer login após registro",
               error: process.env.NODE_ENV === "development" ? err.message : undefined
@@ -136,27 +89,23 @@ export async function registerRoutes(
           }
           const userId = createdUser._id?.toString() || String(createdUser._id);
           
-          // GERA TOKEN JWT E RETORNA JUNTO COM A RESPOSTA
           const token = generateToken(userId);
-          console.log("🔑 Token JWT gerado para novo usuário:", createdUser.email);
           
           res.status(201).json({
             id: userId,
             email: createdUser.email,
             name: createdUser.name,
             avatar: createdUser.avatar,
-            token: token, // TOKEN PARA SALVAR NO LOCALSTORAGE
+            token: token,
           });
         });
       } catch (dbError: any) {
-        console.error("Database error:", dbError);
         return res.status(500).json({ 
           message: "Erro ao conectar com o banco de dados. Verifique se MONGODB_URI está configurado corretamente.",
           error: process.env.NODE_ENV === "development" ? dbError.message : undefined
         });
       }
     } catch (error: any) {
-      console.error("Register error:", error);
       res.status(500).json({ 
         message: "Erro ao criar usuário",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -165,40 +114,26 @@ export async function registerRoutes(
   });
 
   app.post("/api/auth/login", async (req, res, next) => {
-    console.log("🔐 POST /api/auth/login - Requisição recebida!");
-    console.log("📦 Body recebido:", JSON.stringify(req.body));
-    console.log("🍪 Cookie header recebido:", req.headers.cookie);
-    console.log("🌐 Origin:", req.headers.origin);
-    console.log("🌐 Host:", req.headers.host);
-    
-    // Garante que MongoDB está conectado antes de autenticar (com timeout)
     try {
       const db = await Promise.race([
         ensureMongoDBConnection(),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)) // Timeout de 5 segundos
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))
       ]);
       
       if (!db) {
-        console.error("❌ MongoDB não disponível no login");
         return res.status(503).json({ 
           message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes." 
         });
       }
-      console.log("✅ MongoDB conectado para login");
     } catch (error: any) {
-      console.error("❌ Erro ao conectar MongoDB no login:", error);
       return res.status(503).json({ 
         message: "Serviço temporariamente indisponível. Tente novamente em alguns instantes."
       });
     }
-    // Continua com a autenticação
     next();
   }, (req, res, next) => {
-    console.log("🔐 Passando para passport.authenticate...");
-    // Middleware para capturar erros do Passport
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
-        console.error("Erro na autenticação:", err);
         return res.status(500).json({ 
           message: "Erro interno na autenticação",
           error: process.env.NODE_ENV === "development" ? err.message : undefined
@@ -209,115 +144,54 @@ export async function registerRoutes(
           message: info?.message || "Credenciais inválidas" 
         });
       }
-      // Login bem-sucedido
-      console.log("✅ Usuário autenticado, criando sessão...");
-      console.log("User object:", JSON.stringify(user, null, 2));
       
       req.login(user, (loginErr) => {
         if (loginErr) {
-          console.error("❌ Erro ao fazer login:", loginErr);
-          console.error("Erro stack:", loginErr.stack);
           return res.status(500).json({ 
             message: "Erro ao criar sessão",
             error: process.env.NODE_ENV === "development" ? loginErr.message : undefined
           });
         }
-        console.log("✅ Sessão criada com sucesso!");
-        console.log("🍪 Session ID:", req.sessionID);
-        console.log("🍪 Cookie config:", {
-          secure: req.session.cookie.secure,
-          httpOnly: req.session.cookie.httpOnly,
-          sameSite: req.session.cookie.sameSite,
-          maxAge: req.session.cookie.maxAge,
-          domain: req.session.cookie.domain,
-          path: req.session.cookie.path
-        });
         
-        // Salva a sessão explicitamente antes de enviar a resposta
         req.session.save((saveErr) => {
           if (saveErr) {
-            console.error("❌ Erro ao salvar sessão:", saveErr);
             return res.status(500).json({ 
               message: "Erro ao salvar sessão",
               error: process.env.NODE_ENV === "development" ? saveErr.message : undefined
             });
           }
           
-          console.log("✅ Sessão salva no MongoDB");
-          
-          // O express-session deve enviar o cookie automaticamente após req.session.save()
-          // Mas vamos verificar se está sendo enviado
-          const setCookieHeader = res.getHeader("Set-Cookie");
-          console.log("🍪 Set-Cookie header (após save):", setCookieHeader);
-          
-          // Se não estiver sendo enviado, marca a sessão como modificada para forçar o envio
-          if (!setCookieHeader) {
-            console.error("❌ ATENÇÃO: Set-Cookie não está sendo enviado!");
-            console.log("🔧 Marcando sessão como modificada para forçar envio...");
-            req.session.touch();
-            // Salva novamente para garantir
-            req.session.save(() => {
-              console.log("🍪 Set-Cookie após touch:", res.getHeader("Set-Cookie"));
-            });
-          } else {
-            console.log("✅ Set-Cookie header está sendo enviado corretamente pelo express-session");
-          }
-          
-          // Hook no res.end para verificar headers finais
-          const originalEnd = res.end;
-          res.end = function(chunk?: any, encoding?: any) {
-            console.log("🍪 Headers finais no res.end:", {
-              "Set-Cookie": res.getHeader("Set-Cookie"),
-              "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin"),
-              "Access-Control-Allow-Credentials": res.getHeader("Access-Control-Allow-Credentials")
-            });
-            return originalEnd.call(this, chunk, encoding);
-          };
-          
           const userId = user._id?.toString ? user._id.toString() : String(user._id);
           
-          // GERA TOKEN JWT E RETORNA JUNTO COM A RESPOSTA
           const token = generateToken(userId);
-          console.log("🔑 Token JWT gerado para:", user.email);
           
           res.json({
             id: userId,
             email: user.email,
             name: user.name,
             avatar: user.avatar,
-            token: token, // TOKEN PARA SALVAR NO LOCALSTORAGE
+            token: token,
           });
         });
       });
     })(req, res, next);
   });
 
-  app.post("/api/auth/logout", requireAuthHybrid, (req, res) => {
-    console.log("🚪 POST /api/auth/logout - Logout iniciado");
-    
-    // Remove sessão se existir
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("❌ Erro ao destruir sessão:", err);
-        } else {
-          console.log("✅ Sessão destruída com sucesso");
-        }
-      });
-    }
-    
-    // Logout do passport
+  app.post("/api/auth/logout", requireAuthHybrid, (req, res, next) => {
     req.logout((err) => {
       if (err) {
-        console.error("❌ Erro no logout do passport:", err);
         return res.status(500).json({ message: "Erro ao fazer logout" });
       }
-      console.log("✅ Logout do passport realizado");
-      res.json({ message: "Logout realizado com sucesso" });
+
+      req.session.destroy((destroyErr) => {
+        if (destroyErr) {
+          return res.status(500).json({ message: "Erro ao destruir sessão" });
+        }
+        res.json({ message: "Logout realizado com sucesso" });
+      });
     });
   });
 
-  // Protected routes - require authentication
   app.get(api.favorites.list.path, requireAuthHybrid, async (req, res) => {
     const user = getCurrentUserHybrid(req) || getCurrentUser(req);
     if (!user?._id) {
@@ -357,52 +231,16 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // Character routes
-  console.log("🔧 Registrando rotas de personagens:");
-  console.log("  GET", api.characters.list.path);
-  console.log("  POST", api.characters.create.path);
-  console.log("  GET", api.characters.get.path);
-  console.log("  PUT", api.characters.update.path);
-  console.log("  DELETE", api.characters.delete.path);
-  
-  // Register character routes explicitly to ensure they're registered
   app.get("/api/characters", requireAuthHybrid, async (req, res) => {
     try {
-      console.log("🔍 GET /api/characters - Verificando autenticação...");
-      console.log("🍪 Session ID:", req.sessionID);
-      console.log("🍪 Cookie header:", req.headers.cookie);
-      
-      // Verifica se há uma sessão no MongoDB
-      if (req.sessionID) {
-        try {
-          const db = await ensureMongoDBConnection();
-          if (db) {
-            const sessionDoc = await db.collection("sessions").findOne({ _id: req.sessionID });
-            console.log("🍪 Sessão no MongoDB:", sessionDoc ? "encontrada" : "NÃO encontrada");
-            if (sessionDoc) {
-              console.log("🍪 Sessão data:", JSON.stringify(sessionDoc).substring(0, 200));
-            }
-          }
-        } catch (error) {
-          console.error("❌ Erro ao verificar sessão no MongoDB:", error);
-        }
-      }
-      
-      console.log("👤 req.isAuthenticated():", req.isAuthenticated());
-      console.log("👤 req.user:", req.user ? "existe" : "null");
-      
       const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
-        console.log("❌ Usuário não autenticado - sem _id");
         return res.status(401).json({ message: "Não autenticado" });
       }
       const userId = user._id.toString();
-      console.log("✅ Usuário autenticado - User ID:", userId);
       const characters = await characterStorage.getCharacters(userId);
-      console.log("✅ Personagens encontrados:", characters.length);
       res.json(characters);
     } catch (error: any) {
-      console.error("❌ Erro ao buscar personagens:", error);
       res.status(500).json({ 
         message: "Erro ao buscar personagens",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -424,7 +262,6 @@ export async function registerRoutes(
       }
       res.json(character);
     } catch (error: any) {
-      console.error("Erro ao buscar personagem:", error);
       res.status(500).json({ 
         message: "Erro ao buscar personagem",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -434,34 +271,25 @@ export async function registerRoutes(
 
   app.post("/api/characters", requireAuthHybrid, async (req, res) => {
     try {
-      console.log("📝 POST /api/characters - Handler executado!");
-      console.log("Body recebido:", JSON.stringify(req.body).substring(0, 200));
-      
       const user = getCurrentUserHybrid(req) || getCurrentUser(req);
       if (!user?._id) {
-        console.log("❌ Usuário não autenticado");
         return res.status(401).json({ message: "Não autenticado" });
       }
       
       const userId = user._id.toString();
-      console.log("👤 User ID:", userId);
       
       const input = createCharacterSchema.parse({ ...req.body, userId });
-      console.log("✅ Input validado:", input);
       
       const character = await characterStorage.createCharacter(input);
-      console.log("✅ Personagem criado:", character);
       
       res.status(201).json(character);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        console.error("❌ Erro de validação:", err.errors);
         return res.status(400).json({
           message: err.errors[0].message,
           field: err.errors[0].path.join('.'),
         });
       }
-      console.error("❌ Erro ao criar personagem:", err);
       res.status(500).json({ 
         message: "Erro ao criar personagem",
         error: process.env.NODE_ENV === "development" ? (err as Error).message : undefined
@@ -487,7 +315,6 @@ export async function registerRoutes(
           field: err.errors[0].path.join('.'),
         });
       }
-      console.error("Erro ao atualizar personagem:", err);
       res.status(500).json({ 
         message: "Erro ao atualizar personagem",
         error: process.env.NODE_ENV === "development" ? (err as Error).message : undefined
@@ -506,7 +333,6 @@ export async function registerRoutes(
       await characterStorage.deleteCharacter(id, userId);
       res.status(204).send();
     } catch (error: any) {
-      console.error("Erro ao deletar personagem:", error);
       res.status(500).json({ 
         message: "Erro ao deletar personagem",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -514,7 +340,6 @@ export async function registerRoutes(
     }
   });
 
-  // Note routes - IMPORTANT: POST must come before GET with params
   app.post("/api/notes", requireAuthHybrid, async (req, res) => {
     try {
       const user = getCurrentUserHybrid(req) || getCurrentUser(req);
@@ -537,7 +362,6 @@ export async function registerRoutes(
       
       res.status(201).json(note);
     } catch (error: any) {
-      console.error("Erro ao criar nota:", error);
       res.status(500).json({ 
         message: "Erro ao criar nota",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -556,7 +380,6 @@ export async function registerRoutes(
       const notes = await noteStorage.getNotes(userId, characterId);
       res.json(notes);
     } catch (error: any) {
-      console.error("Erro ao buscar notas:", error);
       res.status(500).json({ 
         message: "Erro ao buscar notas",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -578,7 +401,6 @@ export async function registerRoutes(
       }
       res.json(note);
     } catch (error: any) {
-      console.error("Erro ao buscar nota:", error);
       res.status(500).json({ 
         message: "Erro ao buscar nota",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -598,7 +420,6 @@ export async function registerRoutes(
       const note = await noteStorage.updateNote(id, userId, updates);
       res.json(note);
     } catch (error: any) {
-      console.error("Erro ao atualizar nota:", error);
       res.status(500).json({ 
         message: "Erro ao atualizar nota",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -617,7 +438,6 @@ export async function registerRoutes(
       await noteStorage.deleteNote(id, userId);
       res.status(204).send();
     } catch (error: any) {
-      console.error("Erro ao deletar nota:", error);
       res.status(500).json({ 
         message: "Erro ao deletar nota",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
@@ -625,9 +445,7 @@ export async function registerRoutes(
     }
   });
 
-  // 404 handler para rotas de API não encontradas
   app.use("/api/*", (req, res) => {
-    console.error(`❌ Rota API não encontrada: ${req.method} ${req.originalUrl}`);
     res.status(404).json({ 
       message: `Rota não encontrada: ${req.method} ${req.originalUrl}`,
       availableRoutes: [

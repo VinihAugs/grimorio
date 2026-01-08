@@ -81,7 +81,6 @@ async function translateText(text: string, targetLang: string = "pt"): Promise<s
     // Fallback: retorna o texto original se todas as APIs falharem
     return text;
   } catch (error) {
-    console.error("Translation error:", error);
     return text;
   }
 }

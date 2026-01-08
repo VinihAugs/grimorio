@@ -87,7 +87,6 @@ export default function CharacterSelection() {
       });
       setIsDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao criar personagem:", error);
     }
   };
 
