@@ -39,8 +39,10 @@ passport.serializeUser((user: any, done) => {
 // Deserialize user from session
 passport.deserializeUser(async (id: string, done) => {
   try {
+    console.log("🔄 Deserializando usuário - ID:", id);
     const db = await ensureMongoDBConnection();
     if (!db) {
+      console.error("❌ Database not available na deserialização");
       return done(new Error("Database not available"), null);
     }
     const { ObjectId } = await import("mongodb");
@@ -49,24 +51,33 @@ passport.deserializeUser(async (id: string, done) => {
     let user = null;
     if (ObjectId.isValid(id) && id.length === 24) {
       try {
+        console.log("🔍 Buscando usuário com ObjectId:", id);
         user = await db.collection<User>("users").findOne({ 
           _id: new ObjectId(id)
         });
       } catch (e) {
         // Se falhar com ObjectId, tenta como string
+        console.log("⚠️  Falhou com ObjectId, tentando como string:", id);
         user = await db.collection<User>("users").findOne({ 
           _id: id 
         });
       }
     } else {
+      console.log("🔍 Buscando usuário como string:", id);
       user = await db.collection<User>("users").findOne({ 
         _id: id 
       });
     }
     
+    if (user) {
+      console.log("✅ Usuário deserializado:", user.email);
+    } else {
+      console.log("❌ Usuário não encontrado na deserialização");
+    }
+    
     done(null, user);
   } catch (error: any) {
-    console.error("Erro ao deserializar usuário:", error);
+    console.error("❌ Erro ao deserializar usuário:", error);
     done(error, null);
   }
 });

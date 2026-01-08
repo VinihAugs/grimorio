@@ -25,8 +25,16 @@ export async function registerRoutes(
   
   // Auth routes
   app.get("/api/auth/me", (req, res) => {
+    console.log("🔍 GET /api/auth/me - Verificando autenticação...");
+    console.log("🍪 Session ID:", req.sessionID);
+    console.log("🍪 Session exists:", !!req.session);
+    console.log("👤 req.isAuthenticated():", req.isAuthenticated());
+    console.log("👤 req.user:", req.user ? "existe" : "null");
+    console.log("🍪 Cookie header:", req.headers.cookie);
+    
     const user = getCurrentUser(req);
     if (user) {
+      console.log("✅ Usuário autenticado:", user.email);
       res.json({
         id: user._id,
         email: user.email,
@@ -34,6 +42,7 @@ export async function registerRoutes(
         avatar: user.avatar,
       });
     } else {
+      console.log("❌ Usuário não autenticado");
       res.status(401).json({ message: "Não autenticado" });
     }
   });
@@ -182,13 +191,26 @@ export async function registerRoutes(
           domain: req.session.cookie.domain,
           path: req.session.cookie.path
         });
-        console.log("🍪 Set-Cookie header será enviado:", res.getHeader("Set-Cookie"));
-        const userId = user._id?.toString ? user._id.toString() : String(user._id);
-        res.json({
-          id: userId,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
+        
+        // Salva a sessão explicitamente antes de enviar a resposta
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("❌ Erro ao salvar sessão:", saveErr);
+            return res.status(500).json({ 
+              message: "Erro ao salvar sessão",
+              error: process.env.NODE_ENV === "development" ? saveErr.message : undefined
+            });
+          }
+          
+          console.log("✅ Sessão salva no MongoDB");
+          console.log("🍪 Set-Cookie header será enviado:", res.getHeader("Set-Cookie"));
+          const userId = user._id?.toString ? user._id.toString() : String(user._id);
+          res.json({
+            id: userId,
+            email: user.email,
+            name: user.name,
+            avatar: user.avatar,
+          });
         });
       });
     })(req, res, next);
@@ -254,15 +276,24 @@ export async function registerRoutes(
   // Register character routes explicitly to ensure they're registered
   app.get("/api/characters", requireAuth, async (req, res) => {
     try {
+      console.log("🔍 GET /api/characters - Verificando autenticação...");
+      console.log("🍪 Session ID:", req.sessionID);
+      console.log("👤 req.isAuthenticated():", req.isAuthenticated());
+      console.log("👤 req.user:", req.user ? "existe" : "null");
+      console.log("🍪 Cookie header:", req.headers.cookie);
+      
       const user = getCurrentUser(req);
       if (!user?._id) {
+        console.log("❌ Usuário não autenticado - sem _id");
         return res.status(401).json({ message: "Não autenticado" });
       }
       const userId = user._id.toString();
+      console.log("✅ Usuário autenticado - User ID:", userId);
       const characters = await characterStorage.getCharacters(userId);
+      console.log("✅ Personagens encontrados:", characters.length);
       res.json(characters);
     } catch (error: any) {
-      console.error("Erro ao buscar personagens:", error);
+      console.error("❌ Erro ao buscar personagens:", error);
       res.status(500).json({ 
         message: "Erro ao buscar personagens",
         error: process.env.NODE_ENV === "development" ? error.message : undefined
