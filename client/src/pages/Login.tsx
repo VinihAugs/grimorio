@@ -146,7 +146,7 @@ export default function Login() {
             {isLoading ? (
               <Sparkles className="animate-spin mr-2" size={18} />
             ) : null}
-            {isLogin ? "Entrar" : "Criar Conta"}
+            {isLogin ? "Entrar" : "Criar conta"}
           </Button>
         </form>
 

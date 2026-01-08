@@ -137,6 +137,32 @@ export default function Grimoire() {
 
   const totalPages = Math.ceil(filteredSpells.length / itemsPerPage);
 
+  // Calcular números de página para exibição
+  const pageNumbers = useMemo(() => {
+    const pages: number[] = [];
+    const maxButtons = Math.min(5, totalPages);
+    
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else if (currentPage <= 3) {
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i);
+      }
+    } else if (currentPage >= totalPages - 2) {
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }, [currentPage, totalPages]);
+
   // Initial Entry Animation
   useEffect(() => {
     if (!isLoading && !isLoadingDetails && paginatedSpells.length > 0 && listRef.current) {
@@ -269,34 +295,21 @@ export default function Grimoire() {
             </Button>
             
             <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={
-                      currentPage === pageNum
-                        ? "bg-primary text-black hover:bg-primary/90 min-w-[40px]"
-                        : "bg-white/5 border-white/10 text-white hover:bg-white/10 min-w-[40px]"
-                    }
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
+              {pageNumbers.map((pageNum) => (
+                <Button
+                  key={`page-${pageNum}`}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={
+                    currentPage === pageNum
+                      ? "bg-primary text-black hover:bg-primary/90 min-w-[40px]"
+                      : "bg-white/5 border-white/10 text-white hover:bg-white/10 min-w-[40px]"
+                  }
+                >
+                  {pageNum}
+                </Button>
+              ))}
             </div>
             
             <Button

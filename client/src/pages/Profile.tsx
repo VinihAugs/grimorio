@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Skull, Scroll, Zap, LogOut, Check, X, ChevronUp, ChevronDown, Settings, BookOpen } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Skull, Scroll, Zap, LogOut, Check, X, ChevronUp, ChevronDown, Settings, BookOpen, Upload, Pencil } from "lucide-react";
 import { clsx } from "clsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/hooks/use-favorites";
@@ -22,6 +22,10 @@ export default function Profile() {
   const [location, setLocation] = useLocation();
   const [isEditingLevel, setIsEditingLevel] = useState(false);
   const [levelValue, setLevelValue] = useState(String(selectedCharacter?.level || 1));
+  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (selectedCharacter) {
@@ -95,6 +99,65 @@ export default function Profile() {
     setIsEditingLevel(false);
   };
 
+  const handleAvatarClick = () => {
+    if (!selectedCharacter) {
+      alert("Selecione um personagem primeiro na tela de seleção de personagens.");
+      return;
+    }
+    setIsEditingAvatar(true);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("A imagem deve ter no máximo 5MB");
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAvatarSave = async () => {
+    if (!selectedCharacter?.id) return;
+
+    try {
+      let avatarUrl = null;
+      if (avatarFile) {
+        avatarUrl = await convertFileToBase64(avatarFile);
+      }
+
+      await updateCharacter(selectedCharacter.id, { avatar: avatarUrl });
+      setIsEditingAvatar(false);
+      setAvatarFile(null);
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      setAvatarPreview(null);
+    } catch (error) {
+      // Error handling is done in the mutation
+    }
+  };
+
+  const handleAvatarCancel = () => {
+    setIsEditingAvatar(false);
+    setAvatarFile(null);
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarPreview(null);
+  };
+
   return (
     <div 
       className="min-h-screen pb-24 relative"
@@ -110,7 +173,10 @@ export default function Profile() {
       <div className="relative z-10">
       <header className="px-6 pt-safe pt-12 pb-8 bg-gradient-to-b from-secondary/20 to-transparent">
         <div className="flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-full bg-[#0f0f0f] border-2 border-primary p-1 mb-4 shadow-[0_0_20px_rgba(74,222,128,0.3)]">
+          <div 
+            className="relative w-24 h-24 rounded-full bg-[#0f0f0f] border-2 border-primary p-1 mb-4 shadow-[0_0_20px_rgba(74,222,128,0.3)] cursor-pointer group"
+            onClick={handleAvatarClick}
+          >
             <div className="w-full h-full rounded-full bg-secondary/20 flex items-center justify-center overflow-hidden">
               {selectedCharacter?.avatar ? (
                <img 
@@ -121,6 +187,10 @@ export default function Profile() {
               ) : (
                 <Skull className="text-primary opacity-60" size={40} />
               )}
+            </div>
+            {/* Lápis de edição - aparece no hover */}
+            <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Pencil className="text-primary" size={20} />
             </div>
           </div>
           <h1 className="text-2xl font-display text-white tracking-widest text-shadow-glow">
@@ -185,6 +255,77 @@ export default function Profile() {
         </button>
 
       </main>
+
+      {/* Dialog para editar avatar */}
+      <Dialog open={isEditingAvatar} onOpenChange={setIsEditingAvatar}>
+        <DialogContent className="bg-background border-white/10 text-white !rounded-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-display text-white">
+              EDITAR AVATAR
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div>
+              <label className="text-muted-foreground text-sm mb-3 block">
+                Imagem do Personagem
+              </label>
+              <div className="flex items-center gap-4">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Preview"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  />
+                ) : selectedCharacter?.avatar ? (
+                  <img
+                    src={selectedCharacter.avatar}
+                    alt="Current"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center">
+                    <Skull className="text-muted-foreground" size={32} />
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+                >
+                  <Upload size={18} className="mr-2" />
+                  {avatarFile ? "Trocar" : "Selecionar"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleAvatarSave}
+                className="flex-1 bg-primary hover:bg-primary/80 text-black font-bold h-11"
+                disabled={!avatarFile}
+              >
+                <Check size={18} className="mr-2" />
+                Salvar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleAvatarCancel}
+                className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 h-11"
+              >
+                <X size={18} className="mr-2" />
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog para editar nível */}
       <Dialog open={isEditingLevel} onOpenChange={setIsEditingLevel}>

@@ -256,10 +256,11 @@ export default function CharacterSelection() {
                   <img
                     src={formData.avatarPreview}
                     alt="Preview"
-                    className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-primary pointer-events-none"
+                    style={{ pointerEvents: 'none' }}
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center pointer-events-none">
                     <User className="text-muted-foreground" size={32} />
                   </div>
                 )}

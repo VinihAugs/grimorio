@@ -73,9 +73,10 @@ export const CharacterProvider = ({ children }: { children: ReactNode }) => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Character> }) => {
+      const { getAuthHeaders } = await import("@/lib/api-config");
       const res = await fetch(apiUrl(`/api/characters/${id}`), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify(updates),
       });

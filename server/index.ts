@@ -60,6 +60,7 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: '10mb', // Aumentar limite para permitir upload de imagens em base64
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
