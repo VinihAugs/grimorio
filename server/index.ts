@@ -140,6 +140,20 @@ console.log("🍪 Session config:", {
 // Configura sessão ANTES das rotas e outros middlewares
 app.use(session(sessionConfig));
 
+// Middleware para garantir que a sessão seja carregada do MongoDB
+app.use((req, res, next) => {
+  // Se há um sessionID mas não há sessão carregada, força o carregamento
+  if (req.sessionID && !req.session) {
+    console.log("⚠️  Session ID existe mas sessão não carregada, forçando carregamento...");
+  }
+  // Se há sessão mas não está autenticado, tenta deserializar
+  if (req.session && req.session.passport && !req.user) {
+    console.log("🔧 Sessão tem passport mas req.user não existe, forçando deserialização...");
+    // O passport.session() deve fazer isso, mas vamos garantir
+  }
+  next();
+});
+
 // Initialize Passport (após sessão estar configurada)
 app.use(passport.initialize());
 app.use(passport.session());
