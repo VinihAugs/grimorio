@@ -121,6 +121,7 @@ export default function GrimoireNotes() {
     mutationFn: async (id: string) => {
       const res = await fetch(apiUrl(`/api/notes/${id}`), {
         method: "DELETE",
+        headers: await getAuthHeaders(),
         credentials: "include",
       });
       if (!res.ok) {
