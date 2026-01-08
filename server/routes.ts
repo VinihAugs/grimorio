@@ -219,9 +219,21 @@ export async function registerRoutes(
           
           if (!setCookieHeader) {
             console.error("❌ ATENÇÃO: Set-Cookie header não está sendo enviado!");
+            // Tenta forçar o envio do cookie manualmente
+            console.log("🔧 Tentando forçar envio do cookie...");
+            const cookieValue = `connect.sid=${req.sessionID}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${req.session.cookie.maxAge}`;
+            res.setHeader("Set-Cookie", cookieValue);
+            console.log("🍪 Cookie manual definido:", cookieValue.substring(0, 50) + "...");
           } else {
             console.log("✅ Set-Cookie header está sendo enviado corretamente");
           }
+          
+          // Garante que a resposta inclui o cookie
+          console.log("🍪 Headers finais antes de enviar:", {
+            "Set-Cookie": res.getHeader("Set-Cookie"),
+            "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin"),
+            "Access-Control-Allow-Credentials": res.getHeader("Access-Control-Allow-Credentials")
+          });
           
           const userId = user._id?.toString ? user._id.toString() : String(user._id);
           res.json({

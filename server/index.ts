@@ -26,20 +26,37 @@ const httpServer = createServer(app);
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const host = req.headers.host;
+  const referer = req.headers.referer;
+  
+  // Determina a origem correta
+  let allowedOrigin = origin;
+  
+  // Se não tem origin mas tem referer, usa o referer
+  if (!origin && referer) {
+    try {
+      const refererUrl = new URL(referer);
+      allowedOrigin = refererUrl.origin;
+    } catch (e) {
+      // Ignora erro
+    }
+  }
   
   // Em produção, permite requisições do mesmo domínio
-  // Em desenvolvimento, permite qualquer origem
   if (process.env.NODE_ENV === "production") {
-    // Em produção, permite requisições do mesmo domínio (grimorio.onrender.com)
-    if (origin && (origin.includes("grimorio.onrender.com") || origin === `https://${host}`)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    } else if (origin) {
-      // Permite também requisições do mesmo domínio sem protocolo
-      res.setHeader("Access-Control-Allow-Origin", origin);
+    // Se a requisição é do mesmo domínio (sem origin), não precisa de CORS
+    // Mas vamos permitir mesmo assim para garantir
+    if (allowedOrigin && allowedOrigin.includes("grimorio.onrender.com")) {
+      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+    } else if (host && host.includes("grimorio.onrender.com")) {
+      // Se não tem origin mas o host é o mesmo, permite
+      res.setHeader("Access-Control-Allow-Origin", `https://${host}`);
+    } else if (allowedOrigin) {
+      // Permite a origem se fornecida
+      res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
     }
   } else {
     // Em desenvolvimento, permite qualquer origem
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigin || "*");
   }
   
   res.setHeader("Access-Control-Allow-Credentials", "true");
