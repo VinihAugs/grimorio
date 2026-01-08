@@ -138,7 +138,9 @@ export function log(message: string, source = "express") {
 
 // Middleware de logging global - captura TODAS as requisições
 app.use((req, res, next) => {
-  console.log(`📥 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'} - Cookie: ${req.headers.cookie ? 'present' : 'missing'}`);
+  const cookieHeader = req.headers.cookie;
+  const hasSessionCookie = cookieHeader?.includes('connect.sid');
+  console.log(`📥 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'} - Cookie: ${cookieHeader ? (hasSessionCookie ? 'connect.sid present' : 'present but no connect.sid') : 'missing'}`);
   next();
 });
 
