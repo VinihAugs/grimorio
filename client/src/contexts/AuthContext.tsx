@@ -119,6 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) {
         throw new Error(data.message || "Erro ao criar conta");
       }
+      
+      // SALVA O TOKEN NO LOCALSTORAGE
+      if (data.token) {
+        const { saveToken } = await import("@/lib/auth-token");
+        saveToken(data.token);
+      }
+      
       return data as User;
     },
     onSuccess: (data) => {

@@ -134,11 +134,18 @@ export async function registerRoutes(
               error: process.env.NODE_ENV === "development" ? err.message : undefined
             });
           }
+          const userId = createdUser._id?.toString() || String(createdUser._id);
+          
+          // GERA TOKEN JWT E RETORNA JUNTO COM A RESPOSTA
+          const token = generateToken(userId);
+          console.log("🔑 Token JWT gerado para novo usuário:", createdUser.email);
+          
           res.status(201).json({
-            id: createdUser._id?.toString() || createdUser._id,
+            id: userId,
             email: createdUser.email,
             name: createdUser.name,
             avatar: createdUser.avatar,
+            token: token, // TOKEN PARA SALVAR NO LOCALSTORAGE
           });
         });
       } catch (dbError: any) {
