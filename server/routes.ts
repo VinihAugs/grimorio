@@ -213,27 +213,42 @@ export async function registerRoutes(
           
           console.log("✅ Sessão salva no MongoDB");
           
-          // Verifica se o Set-Cookie está sendo enviado
-          const setCookieHeader = res.getHeader("Set-Cookie");
-          console.log("🍪 Set-Cookie header:", setCookieHeader);
+          // FORÇA o envio do cookie usando a assinatura correta do express-session
+          // O express-session assina o cookie com o secret, então precisamos usar o método correto
+          const sessionCookie = req.session.cookie;
+          const signedSessionID = `s:${req.sessionID}`;
           
-          if (!setCookieHeader) {
-            console.error("❌ ATENÇÃO: Set-Cookie header não está sendo enviado!");
-            // Tenta forçar o envio do cookie manualmente
-            console.log("🔧 Tentando forçar envio do cookie...");
-            const cookieValue = `connect.sid=${req.sessionID}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${req.session.cookie.maxAge}`;
-            res.setHeader("Set-Cookie", cookieValue);
-            console.log("🍪 Cookie manual definido:", cookieValue.substring(0, 50) + "...");
-          } else {
-            console.log("✅ Set-Cookie header está sendo enviado corretamente");
-          }
+          // Cria o cookie com a assinatura correta
+          const cookie = require('cookie');
+          const session = require('express-session');
           
-          // Garante que a resposta inclui o cookie
-          console.log("🍪 Headers finais antes de enviar:", {
-            "Set-Cookie": res.getHeader("Set-Cookie"),
-            "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin"),
-            "Access-Control-Allow-Credentials": res.getHeader("Access-Control-Allow-Credentials")
-          });
+          // Usa o método do express-session para gerar o cookie assinado
+          const cookieValue = sessionCookie.serialize('connect.sid', req.sessionID);
+          
+          console.log("🍪 Cookie gerado:", cookieValue.substring(0, 100) + "...");
+          
+          // Define o cookie manualmente com todos os atributos corretos
+          const cookieString = `connect.sid=${cookieValue}; Path=${sessionCookie.path || '/'}; HttpOnly; ${sessionCookie.secure ? 'Secure;' : ''} SameSite=${sessionCookie.sameSite || 'None'}; Max-Age=${Math.floor(sessionCookie.maxAge / 1000)}`;
+          
+          res.setHeader("Set-Cookie", cookieString);
+          
+          console.log("🍪 Set-Cookie header FORÇADO:", cookieString.substring(0, 100) + "...");
+          
+          // Hook no res.end para garantir que o cookie seja enviado
+          const originalEnd = res.end;
+          res.end = function(chunk?: any, encoding?: any) {
+            // Verifica novamente antes de enviar
+            if (!res.getHeader("Set-Cookie")) {
+              console.error("❌ Cookie ainda não está no header! Forçando novamente...");
+              res.setHeader("Set-Cookie", cookieString);
+            }
+            console.log("🍪 Headers finais no res.end:", {
+              "Set-Cookie": res.getHeader("Set-Cookie"),
+              "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin"),
+              "Access-Control-Allow-Credentials": res.getHeader("Access-Control-Allow-Credentials")
+            });
+            return originalEnd.call(this, chunk, encoding);
+          };
           
           const userId = user._id?.toString ? user._id.toString() : String(user._id);
           res.json({
