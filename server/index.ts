@@ -91,42 +91,29 @@ app.use(express.urlencoded({ extended: false }));
 // Session configuration - usa MongoDB store se MONGODB_URI estiver configurado
 let sessionStore: MongoStore | null = null;
 
-if (process.env.MONGODB_URI) {
-  try {
-    // Cria MongoDB Session Store usando a connection string diretamente
-    sessionStore = MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI,
-      dbName: "necro_tome",
-      collectionName: "sessions",
-      ttl: 7 * 24 * 60 * 60, // 7 days em segundos
-    });
-    console.log("✅ MongoDB Session Store configurado com connection string");
-  } catch (error) {
-    console.warn("⚠️  Erro ao configurar MongoDB Session Store:", error);
-    console.log("⚠️  Usando armazenamento em memória...");
-  }
-}
+// MongoDB Session Store será configurado após a conexão MongoDB estar estabelecida
+let sessionStore: MongoStore | null = null;
 
-// Session configuration - usa MongoDB store se disponível, senão memória
-const sessionConfig: session.SessionOptions = {
+// Session configuration - será atualizada após MongoDB conectar
+// Por enquanto, configura sem store (será atualizado depois)
+const createSessionConfig = (store: MongoStore | null): session.SessionOptions => ({
   secret: process.env.SESSION_SECRET || "necro-tome-secret-key-change-in-production",
-  resave: false, // Volta para false - o store gerencia isso
-  saveUninitialized: false, // Volta para false - só salva quando necessário
-  name: "connect.sid", // Nome padrão do cookie de sessão
-  store: sessionStore || undefined, // Usa MongoDB store se disponível
+  resave: false,
+  saveUninitialized: false,
+  name: "connect.sid",
+  store: store || undefined,
   cookie: {
-    secure: process.env.NODE_ENV === "production", // HTTPS em produção (obrigatório para sameSite: "none")
+    secure: process.env.NODE_ENV === "production",
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    // sameSite: "none" é necessário para cookies funcionarem corretamente em produção com HTTPS
-    // Requer secure: true
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    // Não define domain para permitir que funcione em subdomínios
-    path: "/", // Garante que o cookie seja enviado para todas as rotas
+    path: "/",
   },
-  // Força o envio do cookie mesmo em requisições que não modificam a sessão
-  rolling: false, // Desabilita rolling para evitar problemas
-};
+  rolling: false,
+});
+
+// Configura sessão inicialmente sem store (será atualizado quando MongoDB conectar)
+let sessionConfig = createSessionConfig(sessionStore);
 
 // Log da configuração de sessão
 console.log("🍪 Session config:", {
